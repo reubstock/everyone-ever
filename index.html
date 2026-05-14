@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Everyone Ever</title>
+<style>
+  :root {
+    --bg: #060708;
+    --ink: #e6e8ec;
+    --ink-dim: rgba(230,232,236,0.55);
+    --ink-faint: rgba(230,232,236,0.28);
+    --hairline: rgba(255,255,255,0.06);
+    --accent: #ff9a5a;
+    --living: #8cdec7;
+    --living-soft: rgba(140,222,199,0.5);
+    --dead: #d66464;
+    --dead-soft: rgba(214,100,100,0.5);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background:
+      radial-gradient(ellipse 80% 60% at 75% 35%, #0c0f17 0%, #060708 60%),
+      #060708;
+    color: var(--ink);
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+  }
+  .stage { display: grid; grid-template-rows: 88px 1fr; height: 100vh; }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    padding: 0 28px;
+    gap: 32px;
+    border-bottom: 1px solid var(--hairline);
+    background: linear-gradient(to bottom, rgba(255,255,255,0.015), transparent);
+  }
+  .clock-wrap { display: flex; align-items: center; gap: 16px; }
+  .clock { width: 64px; height: 64px; flex-shrink: 0; }
+  .clock .face { fill: rgba(255,255,255,0.015); stroke: rgba(255,255,255,0.18); stroke-width: 1.2; }
+  .clock .tick-major { stroke: rgba(255,255,255,0.55); stroke-width: 1.4; }
+  .clock .tick-minor { stroke: rgba(255,255,255,0.18); stroke-width: 0.6; }
+  .clock .hand { stroke-linecap: round; }
+  .clock .hour   { stroke: var(--ink); stroke-width: 2.6; }
+  .clock .minute { stroke: var(--ink); stroke-width: 1.7; }
+  .clock .second { stroke: var(--accent); stroke-width: 0.9; }
+  .clock .center-outer { fill: var(--ink); }
+  .clock .center-inner { fill: var(--accent); }
+  .clock-meta {
+    font-size: 9px; letter-spacing: 2px; color: var(--ink-faint);
+    text-transform: uppercase; line-height: 1.6;
+  }
+  .clock-meta strong {
+    display: block; font-size: 12px; color: var(--ink-dim);
+    letter-spacing: 2.5px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calendar {
+    display: flex; flex-direction: column; justify-content: center;
+    border-left: 1px solid var(--hairline);
+    padding-left: 28px;
+  }
+  .cal-date {
+    font-size: 26px; line-height: 1; letter-spacing: 1px;
+    font-variant-numeric: tabular-nums; font-weight: 500;
+  }
+  .cal-day {
+    font-size: 10px; letter-spacing: 3.5px; text-transform: uppercase;
+    color: var(--ink-faint); margin-top: 9px;
+  }
+
+  .counters { display: flex; gap: 36px; justify-content: flex-end; align-items: center; }
+  .counter { text-align: right; }
+  .counter .num {
+    font-size: 17px; font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px; color: var(--ink);
+  }
+  .counter .num.living { color: var(--living); }
+  .counter .num.dead { color: var(--dead); }
+  .counter .label {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 2.5px;
+    color: var(--ink-faint); margin-top: 6px;
+  }
+
+  /* ===== PANELS ===== */
+  .panels {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    height: 100%;
+    min-height: 0;
+  }
+  .machine-panel, .macro-panel { position: relative; min-width: 0; min-height: 0; }
+  .machine-panel {
+    border-right: 1px solid var(--hairline);
+    background: linear-gradient(to right, #07090d, #050608);
+    overflow: hidden;
+  }
+  .macro-panel { overflow: hidden; }
+
+  canvas { display: block; width: 100%; height: 100%; }
+
+  .footnote {
+    position: absolute; left: 18px; bottom: 14px;
+    font-size: 9px; color: var(--ink-faint);
+    letter-spacing: 2px; text-transform: uppercase;
+    pointer-events: none;
+  }
+  .footnote.right { left: auto; right: 18px; }
+  .footnote em { font-style: normal; color: rgba(230,232,236,0.45); }
+
+  .panel-label {
+    position: absolute; top: 16px; left: 18px;
+    font-size: 9px; color: var(--ink-faint);
+    letter-spacing: 3px; text-transform: uppercase;
+    pointer-events: none;
+  }
+  .panel-label strong {
+    display: block; color: var(--ink-dim); font-size: 11px;
+    letter-spacing: 2.5px; font-weight: 500; margin-bottom: 4px;
+  }
+  .panel-label.right { left: auto; right: 18px; text-align: right; }
+
+  /* ===== ANNOTATIONS (hourglass callouts) ===== */
+  #annotations {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+  .ann {
+    position: absolute;
+    font-size: 10px;
+    line-height: 1.45;
+    color: var(--ink-dim);
+    letter-spacing: 0.3px;
+    max-width: 240px;
+  }
+  .ann .title {
+    color: var(--ink);
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+    text-transform: none;
+  }
+  .ann.living .title { color: var(--living); }
+  .ann.dead .title { color: var(--dead); }
+  .ann .body { color: rgba(230,232,236,0.55); font-size: 10px; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <header class="topbar">
+    <div class="clock-wrap">
+      <svg class="clock" viewBox="-50 -50 100 100" aria-hidden="true">
+        <circle class="face" cx="0" cy="0" r="46"></circle>
+        <g id="ticks"></g>
+        <line class="hand hour"   id="hHour" x1="0" y1="3"  x2="0" y2="-24"></line>
+        <line class="hand minute" id="hMin"  x1="0" y1="5"  x2="0" y2="-34"></line>
+        <line class="hand second" id="hSec"  x1="0" y1="9"  x2="0" y2="-40"></line>
+        <circle class="center-outer" cx="0" cy="0" r="3.2"></circle>
+        <circle class="center-inner" cx="0" cy="0" r="1.4"></circle>
+      </svg>
+      <div class="clock-meta">
+        <strong id="timeNow">--:--:--</strong>
+        Local · UTC<span id="utcOffset">—</span>
+      </div>
+    </div>
+
+    <div class="calendar">
+      <div class="cal-date" id="calDate">—</div>
+      <div class="cal-day"  id="calDay">—</div>
+    </div>
+
+    <div></div>
+
+    <div class="counters">
+      <div class="counter">
+        <div class="num living" id="cAlive">—</div>
+        <div class="label">Alive on Earth</div>
+      </div>
+      <div class="counter">
+        <div class="num dead" id="cDied">—</div>
+        <div class="label">Humans Ever Died</div>
+      </div>
+      <div class="counter">
+        <div class="num" id="cEver">—</div>
+        <div class="label">Humans Ever Lived</div>
+      </div>
+      <div class="counter">
+        <div class="num living" id="cBornSession">0</div>
+        <div class="label">Born This Session</div>
+      </div>
+      <div class="counter">
+        <div class="num dead" id="cDiedSession">0</div>
+        <div class="label">Died This Session</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="panels">
+    <section class="machine-panel">
+      <div class="panel-label"><strong>The Machine</strong>output · one every 8.000 s</div>
+      <canvas id="machineCanvas"></canvas>
+      <div class="footnote">1 unit ≈ 34 real births · world rate ≈ 4.3/sec</div>
+    </section>
+    <section class="macro-panel">
+      <div class="panel-label right"><strong>Humanity Today &amp; Humanity's Past</strong>1 grain ≈ 10 million people</div>
+      <canvas id="macroCanvas"></canvas>
+      <div id="annotations"></div>
+      <div class="footnote right">after Max Roser · Our World in Data · <em>estimates from PRB &amp; UN Population Division</em></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ===== CONSTANTS =====
+  const TAU = Math.PI * 2;
+  const PER_GRAIN = 10_000_000;
+
+  // 2026 baseline figures
+  const ALIVE_NOW_2026     = 8_100_000_000;
+  const EVER_DIED_NOW_2026 = 109_000_000_000;
+  const TOTAL_EVER_2026    = ALIVE_NOW_2026 + EVER_DIED_NOW_2026;
+  const TOP_GRAINS         = Math.round(ALIVE_NOW_2026     / PER_GRAIN); // 810
+  const BOTTOM_GRAINS      = Math.round(EVER_DIED_NOW_2026 / PER_GRAIN); // 10,900
+
+  // World rates (per second)
+  const BIRTH_RATE  = 4.3;
+  const DEATH_RATE  = 1.9;
+  const NET_GROWTH  = BIRTH_RATE - DEATH_RATE; // 2.4
+  const CADENCE_S   = 8; // 1 viz-baby every 8s
+
+  // ===== UTIL =====
+  const $    = id => document.getElementById(id);
+  const fmt  = n => Math.round(n).toLocaleString("en-US");
+  const dpr  = () => Math.min(window.devicePixelRatio || 1, 2);
+  const pad  = n => String(n).padStart(2, "0");
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // ===== CLOCK TICKS =====
+  (() => {
+    let svg = "";
+    for (let i = 0; i < 60; i++) {
+      const a  = (i / 60) * TAU - Math.PI / 2;
+      const r1 = i % 5 === 0 ? 38 : 42;
+      const r2 = 46;
+      const x1 = Math.cos(a) * r1, y1 = Math.sin(a) * r1;
+      const x2 = Math.cos(a) * r2, y2 = Math.sin(a) * r2;
+      svg += `<line class="${i%5===0?'tick-major':'tick-minor'}" x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}"></line>`;
+    }
+    $("ticks").innerHTML = svg;
+  })();
+
+  const hHour   = $("hHour"), hMin = $("hMin"), hSec = $("hSec");
+  const timeNow = $("timeNow"), utcOffset = $("utcOffset");
+  const calDate = $("calDate"), calDay = $("calDay");
+  const cAlive  = $("cAlive"), cDied = $("cDied"), cEver = $("cEver");
+  const cBornSession = $("cBornSession"), cDiedSession = $("cDiedSession");
+
+  const sessionStart = Date.now();
+
+  function tickHeader(now) {
+    const d  = new Date(now);
+    const ms = d.getMilliseconds();
+    const s  = d.getSeconds() + ms / 1000;
+    const m  = d.getMinutes() + s / 60;
+    const h  = (d.getHours() % 12) + m / 60;
+    hSec.setAttribute("transform",  `rotate(${s * 6})`);
+    hMin.setAttribute("transform",  `rotate(${m * 6})`);
+    hHour.setAttribute("transform", `rotate(${h * 30})`);
+
+    timeNow.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const off = -d.getTimezoneOffset() / 60;
+    utcOffset.textContent = (off >= 0 ? "+" : "") + off;
+
+    calDate.textContent = d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    calDay.textContent  = d.toLocaleDateString("en-US", { weekday: "long" });
+
+    const elapsed = (now - sessionStart) / 1000;
+    cAlive.textContent        = fmt(ALIVE_NOW_2026     + elapsed * NET_GROWTH);
+    cDied.textContent         = fmt(EVER_DIED_NOW_2026 + elapsed * DEATH_RATE);
+    cEver.textContent         = fmt(TOTAL_EVER_2026    + elapsed * BIRTH_RATE);
+    cBornSession.textContent  = fmt(elapsed * BIRTH_RATE);
+    cDiedSession.textContent  = fmt(elapsed * DEATH_RATE);
+  }
+
+  // ===== MACRO CANVAS / HOURGLASS =====
+  const macroCanvas = $("macroCanvas");
+  const macroCtx    = macroCanvas.getContext("2d");
+  let macroW = 0, macroH = 0;
+
+  const hg = {
+    cx: 0, yTop: 0, yBottom: 0, h: 0, maxHalfW: 0,
+    cellSize: 0, grainR: 0,
+    topGrains: [],
+    bottomGrains: [],
+  };
+
+  // Profile: width as fraction of max, given y01 in [0,1] (0=top, 1=bottom).
+  // Wide at top & bottom, narrow at waist (y01=0.5).
+  function profileNormalized(y01) {
+    const t = (y01 - 0.5) * 2;       // -1 at top, 0 at waist, 1 at bottom
+    const wMin = 0.075;
+    const p = 1.6;
+    return wMin + (1 - wMin) * Math.pow(Math.abs(t), p);
+  }
+
+  function resizeMacro() {
+    const rect = macroCanvas.parentElement.getBoundingClientRect();
+    const r = dpr();
+    macroCanvas.width  = Math.round(rect.width  * r);
+    macroCanvas.height = Math.round(rect.height * r);
+    macroCtx.setTransform(r, 0, 0, r, 0, 0);
+    macroW = rect.width; macroH = rect.height;
+    layoutHourglass();
+    layoutAnnotations();
+  }
+
+  function layoutHourglass() {
+    const padTop = 56, padBottom = 56, padLeft = 24, padRight = 300;
+    const usableW = macroW - padLeft - padRight;
+    const usableH = macroH - padTop - padBottom;
+
+    // Target aspect: bulb pair width ≈ 0.55 × total height
+    const targetAspect = 0.55;
+    let h, maxHalfW;
+    if (usableW / usableH > targetAspect) {
+      h = usableH;
+      maxHalfW = h * targetAspect / 2;
+    } else {
+      maxHalfW = usableW / 2;
+      h = (2 * maxHalfW) / targetAspect;
+    }
+    hg.h = h;
+    hg.maxHalfW = maxHalfW;
+    hg.cx = padLeft + usableW * 0.5;
+    hg.yTop = padTop + (usableH - h) / 2;
+    hg.yBottom = hg.yTop + h;
+
+    // Pick cell size so BOTTOM_GRAINS fill ~88% of bottom half-bulb area.
+    // Half-bulb area ≈ 2 * maxHalfW * (h/2) * profileIntegral, where
+    // profileIntegral = wMin + (1-wMin)/(p+1) ≈ 0.43.
+    const halfBulbArea = 2 * maxHalfW * (h / 2) * 0.43;
+    const targetFill = 0.88;
+    const cellArea = halfBulbArea * targetFill / BOTTOM_GRAINS;
+    hg.cellSize = Math.max(1.6, Math.sqrt(cellArea));
+    hg.grainR   = Math.max(0.7, hg.cellSize * 0.38);
+
+    hg.topGrains    = packGrains("top",    TOP_GRAINS);
+    hg.bottomGrains = packGrains("bottom", BOTTOM_GRAINS);
+  }
+
+  function packGrains(which, count) {
+    const grains = [];
+    const cs = hg.cellSize;
+    const wallMargin = 0.015;
+    const stepY = cs * 0.92 / hg.h;
+    let y01 = (which === "top") ? (0.5 - 0.004) : (1.0 - 0.004);
+    const limit = (which === "top") ? 0 : 0.5;
+    const dir = -1; // both directions go "up" (decreasing y01)
+
+    while (grains.length < count && y01 > limit) {
+      const yPx = hg.yTop + y01 * hg.h;
+      const halfWN = Math.max(0, profileNormalized(y01) - wallMargin);
+      const halfWpx = halfWN * hg.maxHalfW;
+      if (halfWpx > 0) {
+        const cells = Math.floor(halfWpx * 2 / cs);
+        if (cells > 0) {
+          const startX = hg.cx - cells * cs / 2;
+          for (let i = 0; i < cells && grains.length < count; i++) {
+            const x = startX + (i + 0.5) * cs + (Math.random() - 0.5) * cs * 0.45;
+            const y = yPx + (Math.random() - 0.5) * cs * 0.45;
+            grains.push({ x, y });
+          }
+        }
+      }
+      y01 += dir * stepY;
+    }
+    return grains;
+  }
+
+  // ===== ANNOTATIONS =====
+  const ANNOTATIONS = [
+    { y01: 0.06, side: "left",  kind: "neutral",
+      title: "Each grain ≈ 10,000,000 people",
+      body:  "Falling into the universe of the living." },
+    { y01: 0.46, side: "right", kind: "living",
+      title: "You are here",
+      body:  "The 810 grains in the upper chamber represent the ~8.1 billion people alive today." },
+    { y01: 0.54, side: "left",  kind: "dead",
+      title: "≈ 1.9 deaths per second",
+      body:  "About 60 million people die every year. 6 grains of sand pass through the neck." },
+    { y01: 0.68, side: "right", kind: "dead",
+      title: "About 109 billion have ever died",
+      body:  "10,900 grains of sand have already fallen through." },
+    { y01: 0.81, side: "right", kind: "dead",
+      title: "Half of the dead were children",
+      body:  "(in pre-modern times, half of all children died before age 5.)" },
+    { y01: 0.91, side: "right", kind: "dead",
+      title: "Socrates lies here · 399 BCE",
+      body:  "Roughly half of everyone who ever lived has lived in the last 2,000 years." },
+    { y01: 0.985, side: "right", kind: "dead",
+      title: "The first agriculturalists",
+      body:  "Only about 9 billion people lived before the Agricultural Revolution." },
+  ];
+
+  let annNodes = [];   // [{ann, el, leaderStart, leaderEnd}]
+
+  function layoutAnnotations() {
+    const wrap = $("annotations");
+    wrap.innerHTML = "";
+    annNodes = [];
+
+    for (const a of ANNOTATIONS) {
+      const yPx = hg.yTop + a.y01 * hg.h;
+      const halfW = profileNormalized(a.y01) * hg.maxHalfW;
+      const edgeX = a.side === "right" ? (hg.cx + halfW) : (hg.cx - halfW);
+
+      // Leader end: where the dashed line stops near the label
+      const leadLen = 56;
+      const labelX = a.side === "right" ? (edgeX + leadLen) : (edgeX - leadLen);
+
+      // Label box position (HTML element)
+      const el = document.createElement("div");
+      el.className = "ann " + (a.kind === "living" ? "living" : a.kind === "dead" ? "dead" : "");
+      el.innerHTML = `<div class="title">${a.title}</div><div class="body">${a.body}</div>`;
+      el.style.top = (yPx - 14) + "px";
+
+      // Width clamp
+      el.style.maxWidth = (a.side === "right" ? Math.min(240, macroW - labelX - 24) : Math.min(220, labelX - 24)) + "px";
+
+      if (a.side === "right") {
+        el.style.left = (labelX + 8) + "px";
+      } else {
+        el.style.right = (macroW - labelX + 8) + "px";
+        el.style.textAlign = "right";
+      }
+      wrap.appendChild(el);
+
+      annNodes.push({
+        ann: a,
+        el,
+        leaderStart: { x: edgeX, y: yPx },
+        leaderEnd:   { x: labelX, y: yPx },
+      });
+    }
+  }
+
+  // ===== MACHINE CANVAS =====
+  const machineCanvas = $("machineCanvas");
+  const mCtx          = machineCanvas.getContext("2d");
+  let mW = 0, mH = 0;
+
+  function resizeMachine() {
+    const rect = machineCanvas.parentElement.getBoundingClientRect();
+    const r = dpr();
+    machineCanvas.width  = Math.round(rect.width  * r);
+    machineCanvas.height = Math.round(rect.height * r);
+    mCtx.setTransform(r, 0, 0, r, 0, 0);
+    mW = rect.width; mH = rect.height;
+  }
+
+  // ===== ANIMATION STATE =====
+  const babies = [];          // machine → hourglass flights
+  const deathParticles = [];  // continuous trickle through waist
+  const topPulses = [];       // birth landings in top bulb
+  const bottomPulses = [];    // death landings in bottom pile
+  let lastBirth = -Infinity;
+  let lastDeath = -Infinity;
+
+  function step(now) {
+    // schedule baby every 8s
+    if (now - lastBirth >= CADENCE_S * 1000) {
+      babies.push({ phase: "drop", born: now });
+      lastBirth = now;
+    }
+
+    // emit a death-grain ≈ every 540ms (≈1.85/s, close to real rate)
+    if (now - lastDeath >= 520 + Math.random() * 280) {
+      const jitter = (Math.random() - 0.5) * hg.maxHalfW * 0.06;
+      deathParticles.push({
+        x: hg.cx + jitter,
+        yStart: hg.yTop + hg.h * 0.502,
+        yEnd:   hg.yTop + hg.h * 0.985,
+        born: now,
+        duration: 1100 + Math.random() * 500,
+      });
+      lastDeath = now;
+    }
+
+    const machineRect = machineCanvas.getBoundingClientRect();
+    const macroRect   = macroCanvas.getBoundingClientRect();
+    const beltY       = mH - 96;
+
+    for (let i = babies.length - 1; i >= 0; i--) {
+      const b = babies[i];
+      if (b.phase === "drop") {
+        b.t = Math.min((now - b.born) / 900, 1);
+        if (b.t >= 1) { b.phase = "belt"; b.beltStart = now; }
+      } else if (b.phase === "belt") {
+        b.t = Math.min((now - b.beltStart) / 3000, 1);
+        if (b.t >= 1) {
+          b.phase = "fly";
+          b.flyStart = now;
+          b.sx = machineRect.left + mW - 18;
+          b.sy = machineRect.top  + beltY - 6;
+          // target: scattered across the open top of the upper bulb
+          const entryY01 = 0.04 + Math.random() * 0.10;
+          const entryHalfW = profileNormalized(entryY01) * hg.maxHalfW;
+          const tx = hg.cx + (Math.random() - 0.5) * entryHalfW * 1.6;
+          const ty = hg.yTop + entryY01 * hg.h;
+          b.ex = macroRect.left + tx;
+          b.ey = macroRect.top  + ty;
+          b.arcCx = (b.sx + b.ex) / 2;
+          b.arcCy = Math.min(b.sy, b.ey) - 130 - Math.random() * 60;
+        }
+      } else if (b.phase === "fly") {
+        b.t = Math.min((now - b.flyStart) / 1500, 1);
+        if (b.t >= 1) {
+          // birth landing → pulse where the grain joins the upper pile
+          const surfaceTarget = pickTopSurfacePoint();
+          topPulses.push({ x: surfaceTarget.x, y: surfaceTarget.y, born: now });
+          babies.splice(i, 1);
+        }
+      }
+    }
+
+    for (let i = deathParticles.length - 1; i >= 0; i--) {
+      const p = deathParticles[i];
+      p.t = (now - p.born) / p.duration;
+      if (p.t >= 1) {
+        const lx = p.x + (Math.random() - 0.5) * 14;
+        const ly = hg.yTop + hg.h * (0.975 - Math.random() * 0.04);
+        bottomPulses.push({ x: lx, y: ly, born: now });
+        deathParticles.splice(i, 1);
+      }
+    }
+
+    for (let i = topPulses.length - 1; i >= 0; i--) {
+      if (now - topPulses[i].born > 1500) topPulses.splice(i, 1);
+    }
+    for (let i = bottomPulses.length - 1; i >= 0; i--) {
+      if (now - bottomPulses[i].born > 1300) bottomPulses.splice(i, 1);
+    }
+  }
+
+  function pickTopSurfacePoint() {
+    // pick a grain near the top of the upper pile (smallest y01 = highest up)
+    if (hg.topGrains.length === 0) {
+      return { x: hg.cx, y: hg.yTop + hg.h * 0.495 };
+    }
+    // top of pile = grain with smallest y. Sample one near the surface.
+    let minY = Infinity;
+    for (const g of hg.topGrains) if (g.y < minY) minY = g.y;
+    const surfaceBand = minY + 16;
+    const candidates = [];
+    for (const g of hg.topGrains) if (g.y < surfaceBand) candidates.push(g);
+    const c = candidates[Math.floor(Math.random() * candidates.length)] || hg.topGrains[0];
+    return { x: c.x, y: c.y - 1 };
+  }
+
+  // ===== DRAW: MACRO (hourglass) =====
+  function hourglassPath() {
+    macroCtx.beginPath();
+    const N = 100;
+    for (let i = 0; i <= N; i++) {
+      const y01 = i / N;
+      const y = hg.yTop + y01 * hg.h;
+      const halfW = profileNormalized(y01) * hg.maxHalfW;
+      if (i === 0) macroCtx.moveTo(hg.cx - halfW, y);
+      else         macroCtx.lineTo(hg.cx - halfW, y);
+    }
+    for (let i = N; i >= 0; i--) {
+      const y01 = i / N;
+      const y = hg.yTop + y01 * hg.h;
+      const halfW = profileNormalized(y01) * hg.maxHalfW;
+      macroCtx.lineTo(hg.cx + halfW, y);
+    }
+    macroCtx.closePath();
+  }
+
+  function drawMacro(now) {
+    macroCtx.clearRect(0, 0, macroW, macroH);
+
+    // subtle interior wash
+    hourglassPath();
+    macroCtx.fillStyle = "rgba(255,255,255,0.012)";
+    macroCtx.fill();
+
+    // soft halo behind the upper pile (the living glow)
+    {
+      const cy = hg.yTop + hg.h * 0.48;
+      const halfW = profileNormalized(0.48) * hg.maxHalfW;
+      const grad = macroCtx.createRadialGradient(hg.cx, cy, 0, hg.cx, cy, halfW * 1.8);
+      grad.addColorStop(0,   "rgba(140,222,199,0.20)");
+      grad.addColorStop(0.5, "rgba(140,222,199,0.08)");
+      grad.addColorStop(1,   "rgba(140,222,199,0)");
+      macroCtx.fillStyle = grad;
+      macroCtx.fillRect(hg.cx - halfW * 2, cy - halfW * 2, halfW * 4, halfW * 4);
+    }
+
+    // top grains (living, teal)
+    const r = hg.grainR;
+    for (let i = 0; i < hg.topGrains.length; i++) {
+      const g = hg.topGrains[i];
+      const t = 0.78 + 0.22 * Math.sin(now / 700 + i * 0.7);
+      macroCtx.fillStyle = `rgba(140,222,199,${t.toFixed(3)})`;
+      macroCtx.beginPath();
+      macroCtx.arc(g.x, g.y, r, 0, TAU);
+      macroCtx.fill();
+    }
+
+    // bottom grains (dead, crimson)
+    for (let i = 0; i < hg.bottomGrains.length; i++) {
+      const g = hg.bottomGrains[i];
+      const t = 0.72 + 0.18 * Math.sin(now / 900 + i * 0.31);
+      macroCtx.fillStyle = `rgba(214,100,100,${t.toFixed(3)})`;
+      macroCtx.beginPath();
+      macroCtx.arc(g.x, g.y, r, 0, TAU);
+      macroCtx.fill();
+    }
+
+    // death stream particles falling through neck
+    for (const p of deathParticles) {
+      const t = Math.max(0, Math.min(1, p.t));
+      const y = lerp(p.yStart, p.yEnd, t * t);     // gravity ease
+      const fadeIn = Math.min(1, t * 6);
+      const trailY = y - Math.min(10, 60 * t * (1 - t));
+      macroCtx.strokeStyle = `rgba(214,120,110,${(0.5 * fadeIn).toFixed(3)})`;
+      macroCtx.lineWidth = 1;
+      macroCtx.beginPath();
+      macroCtx.moveTo(p.x, trailY);
+      macroCtx.lineTo(p.x, y);
+      macroCtx.stroke();
+      macroCtx.fillStyle = `rgba(230,150,130,${(0.95 * fadeIn).toFixed(3)})`;
+      macroCtx.beginPath();
+      macroCtx.arc(p.x, y, 1.3, 0, TAU);
+      macroCtx.fill();
+    }
+
+    // birth flight particles (from machine → top of upper bulb)
+    const macroRect = macroCanvas.getBoundingClientRect();
+    for (const b of babies) {
+      if (b.phase !== "fly") continue;
+      const t = b.t, u = 1 - t;
+      const xS = u*u*b.sx + 2*u*t*b.arcCx + t*t*b.ex;
+      const yS = u*u*b.sy + 2*u*t*b.arcCy + t*t*b.ey;
+      const tt = Math.max(0, t - 0.08), uu = 1 - tt;
+      const xT = uu*uu*b.sx + 2*uu*tt*b.arcCx + tt*tt*b.ex;
+      const yT = uu*uu*b.sy + 2*uu*tt*b.arcCy + tt*tt*b.ey;
+      const x = xS - macroRect.left, y = yS - macroRect.top;
+      const xx = xT - macroRect.left, yy = yT - macroRect.top;
+
+      macroCtx.strokeStyle = "rgba(180,240,220,0.45)";
+      macroCtx.lineWidth = 1.3;
+      macroCtx.beginPath();
+      macroCtx.moveTo(xx, yy);
+      macroCtx.lineTo(x, y);
+      macroCtx.stroke();
+
+      const glow = macroCtx.createRadialGradient(x, y, 0, x, y, 18);
+      glow.addColorStop(0, "rgba(200,250,235,0.95)");
+      glow.addColorStop(0.5, "rgba(140,222,199,0.35)");
+      glow.addColorStop(1, "rgba(140,222,199,0)");
+      macroCtx.fillStyle = glow;
+      macroCtx.beginPath();
+      macroCtx.arc(x, y, 18, 0, TAU);
+      macroCtx.fill();
+    }
+
+    // landing pulses (top: living-teal, bottom: dead-crimson)
+    for (const p of topPulses) {
+      const age = (now - p.born) / 1500;
+      macroCtx.strokeStyle = `rgba(140,222,199,${(0.6 * (1 - age)).toFixed(3)})`;
+      macroCtx.lineWidth = 1;
+      macroCtx.beginPath();
+      macroCtx.arc(p.x, p.y, 4 + age * 22, 0, TAU);
+      macroCtx.stroke();
+      macroCtx.fillStyle = `rgba(200,250,235,${(0.8 * (1 - age)).toFixed(3)})`;
+      macroCtx.beginPath();
+      macroCtx.arc(p.x, p.y, r * 1.6, 0, TAU);
+      macroCtx.fill();
+    }
+    for (const p of bottomPulses) {
+      const age = (now - p.born) / 1300;
+      macroCtx.strokeStyle = `rgba(214,140,120,${(0.4 * (1 - age)).toFixed(3)})`;
+      macroCtx.lineWidth = 1;
+      macroCtx.beginPath();
+      macroCtx.arc(p.x, p.y, 3 + age * 12, 0, TAU);
+      macroCtx.stroke();
+    }
+
+    // hourglass frame outline (drawn last so it sits crisp over the sand)
+    hourglassPath();
+    macroCtx.strokeStyle = "rgba(230,232,236,0.28)";
+    macroCtx.lineWidth = 1.2;
+    macroCtx.stroke();
+    // subtle inner hairline
+    hourglassPath();
+    macroCtx.strokeStyle = "rgba(255,255,255,0.04)";
+    macroCtx.lineWidth = 3.5;
+    macroCtx.stroke();
+
+    // annotation leader lines
+    macroCtx.setLineDash([3, 4]);
+    macroCtx.strokeStyle = "rgba(230,232,236,0.32)";
+    macroCtx.lineWidth = 0.9;
+    for (const n of annNodes) {
+      macroCtx.beginPath();
+      macroCtx.moveTo(n.leaderStart.x, n.leaderStart.y);
+      macroCtx.lineTo(n.leaderEnd.x,   n.leaderEnd.y);
+      macroCtx.stroke();
+      // small marker dot at the hourglass edge
+      macroCtx.setLineDash([]);
+      macroCtx.fillStyle = "rgba(230,232,236,0.4)";
+      macroCtx.beginPath();
+      macroCtx.arc(n.leaderStart.x, n.leaderStart.y, 1.6, 0, TAU);
+      macroCtx.fill();
+      macroCtx.setLineDash([3, 4]);
+    }
+    macroCtx.setLineDash([]);
+  }
+
+  // ===== DRAW: MACHINE =====
+  function drawMachine(now) {
+    mCtx.clearRect(0, 0, mW, mH);
+
+    const cx = mW / 2;
+    const beltY = mH - 96;
+    const chamberY = beltY - 230;
+    const chR = 52;
+
+    mCtx.strokeStyle = "rgba(220,228,240,0.20)";
+    mCtx.lineWidth = 1;
+
+    // input vessels (three tanks)
+    const tankY = 100;
+    for (let i = -1; i <= 1; i++) {
+      const tx = cx + i * 64;
+      drawRoundedRect(mCtx, tx - 24, tankY - 28, 48, 56, 9);
+      mCtx.stroke();
+      mCtx.strokeStyle = "rgba(220,228,240,0.1)";
+      mCtx.beginPath();
+      mCtx.moveTo(tx - 18, tankY - 14);
+      mCtx.lineTo(tx + 18, tankY - 14);
+      mCtx.stroke();
+      mCtx.strokeStyle = "rgba(220,228,240,0.20)";
+      mCtx.beginPath();
+      mCtx.moveTo(tx, tankY + 28);
+      mCtx.lineTo(tx, tankY + 56);
+      mCtx.lineTo(cx, tankY + 84);
+      mCtx.stroke();
+    }
+    mCtx.beginPath();
+    mCtx.arc(cx, tankY + 84, 4.5, 0, TAU);
+    mCtx.stroke();
+    mCtx.beginPath();
+    mCtx.moveTo(cx, tankY + 88);
+    mCtx.lineTo(cx, chamberY - 50);
+    mCtx.stroke();
+
+    // formation chamber (hex)
+    drawHex(mCtx, cx, chamberY, chR);
+    mCtx.stroke();
+    mCtx.strokeStyle = "rgba(220,228,240,0.08)";
+    mCtx.beginPath();
+    mCtx.arc(cx, chamberY, chR - 14, 0, TAU);
+    mCtx.stroke();
+    mCtx.strokeStyle = "rgba(220,228,240,0.20)";
+
+    // chamber glow (teal — matches the living)
+    const glowK = chamberGlow(now);
+    const grad = mCtx.createRadialGradient(cx, chamberY, 0, cx, chamberY, chR + 26);
+    grad.addColorStop(0,    `rgba(170,240,215,${0.35 + glowK * 0.40})`);
+    grad.addColorStop(0.45, `rgba(140,222,199,${0.10 + glowK * 0.15})`);
+    grad.addColorStop(1,     "rgba(140,222,199,0)");
+    mCtx.fillStyle = grad;
+    mCtx.beginPath();
+    mCtx.arc(cx, chamberY, chR + 26, 0, TAU);
+    mCtx.fill();
+
+    // chute (trapezoid)
+    mCtx.beginPath();
+    mCtx.moveTo(cx - 14, chamberY + chR - 6);
+    mCtx.lineTo(cx - 24, beltY - 18);
+    mCtx.lineTo(cx + 24, beltY - 18);
+    mCtx.lineTo(cx + 14, chamberY + chR - 6);
+    mCtx.closePath();
+    mCtx.stroke();
+    mCtx.strokeStyle = "rgba(220,228,240,0.08)";
+    mCtx.beginPath();
+    mCtx.moveTo(cx - 10, chamberY + chR);
+    mCtx.lineTo(cx - 18, beltY - 22);
+    mCtx.moveTo(cx + 10, chamberY + chR);
+    mCtx.lineTo(cx + 18, beltY - 22);
+    mCtx.stroke();
+    mCtx.strokeStyle = "rgba(220,228,240,0.20)";
+
+    // conveyor frame
+    mCtx.beginPath();
+    mCtx.moveTo(0, beltY);     mCtx.lineTo(mW, beltY);
+    mCtx.moveTo(0, beltY + 14);mCtx.lineTo(mW, beltY + 14);
+    mCtx.stroke();
+
+    // pulley (left)
+    mCtx.beginPath();
+    mCtx.arc(36, beltY + 7, 14, 0, TAU);
+    mCtx.stroke();
+    mCtx.save();
+    mCtx.translate(36, beltY + 7);
+    mCtx.rotate((now / 700) % TAU);
+    mCtx.strokeStyle = "rgba(220,228,240,0.30)";
+    mCtx.beginPath();
+    mCtx.moveTo(-10, 0); mCtx.lineTo(10, 0);
+    mCtx.moveTo(0, -10); mCtx.lineTo(0, 10);
+    mCtx.stroke();
+    mCtx.restore();
+    mCtx.strokeStyle = "rgba(220,228,240,0.20)";
+    mCtx.beginPath();
+    mCtx.arc(36, beltY + 7, 4, 0, TAU);
+    mCtx.stroke();
+
+    // moving dashes on belt
+    mCtx.strokeStyle = "rgba(220,228,240,0.14)";
+    mCtx.setLineDash([7, 13]);
+    mCtx.lineDashOffset = -((now / 30) % 20);
+    mCtx.beginPath();
+    mCtx.moveTo(0, beltY + 7);
+    mCtx.lineTo(mW, beltY + 7);
+    mCtx.stroke();
+    mCtx.setLineDash([]);
+
+    // cadence bar (teal)
+    const sinceLast = Math.min(CADENCE_S, (now - lastBirth) / 1000);
+    const barFrac = sinceLast / CADENCE_S;
+    mCtx.strokeStyle = "rgba(140,222,199,0.7)";
+    mCtx.lineWidth = 1;
+    mCtx.beginPath();
+    mCtx.moveTo(cx - 28, chamberY + chR + 12);
+    mCtx.lineTo(cx - 28 + 56 * barFrac, chamberY + chR + 12);
+    mCtx.stroke();
+    mCtx.strokeStyle = "rgba(140,222,199,0.18)";
+    mCtx.beginPath();
+    mCtx.moveTo(cx - 28 + 56 * barFrac, chamberY + chR + 12);
+    mCtx.lineTo(cx + 28, chamberY + chR + 12);
+    mCtx.stroke();
+
+    // babies on machine
+    for (const b of babies) {
+      if (b.phase === "drop") {
+        const yStart = chamberY + chR - 6;
+        const yEnd   = beltY - 6;
+        const y = lerp(yStart, yEnd, b.t * b.t);
+        drawBaby(mCtx, cx, y, 1);
+      } else if (b.phase === "belt") {
+        const xStart = cx;
+        const xEnd   = mW + 22;
+        const x = lerp(xStart, xEnd, b.t);
+        drawBaby(mCtx, x, beltY - 6, 1 - b.t * 0.25);
+      }
+    }
+
+    // schematic labels
+    mCtx.fillStyle = "rgba(230,232,236,0.34)";
+    mCtx.font = "9px ui-monospace, monospace";
+    mCtx.textAlign = "center";
+    mCtx.fillText("I N P U T   V E S S E L S", cx, tankY - 42);
+    mCtx.fillText("F O R M A T I O N   C H A M B E R", cx, chamberY - chR - 10);
+    mCtx.textAlign = "left";
+    mCtx.fillText("C O N V E Y O R   →", 60, beltY - 22);
+  }
+
+  function chamberGlow(now) {
+    const dropping = babies.some(b => b.phase === "drop");
+    if (dropping) return 1;
+    const since = (now - lastBirth) / 1000;
+    const frac  = Math.min(since / CADENCE_S, 1);
+    return frac * 0.7 + 0.15 + 0.1 * (0.5 + 0.5 * Math.sin(now / 600));
+  }
+
+  function drawBaby(ctx, x, y, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, 22);
+    glow.addColorStop(0,   "rgba(200,250,235,0.70)");
+    glow.addColorStop(0.5, "rgba(140,222,199,0.22)");
+    glow.addColorStop(1,   "rgba(140,222,199,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, 22, 0, TAU);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(220,250,238,0.95)";
+    ctx.beginPath();
+    ctx.ellipse(x, y, 5.2, 7.3, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = "rgba(240,255,248,1)";
+    ctx.beginPath();
+    ctx.arc(x, y - 5, 2.4, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawRoundedRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arc(x + w - r, y + r, r, -Math.PI/2, 0);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arc(x + w - r, y + h - r, r, 0, Math.PI/2);
+    ctx.lineTo(x + r, y + h);
+    ctx.arc(x + r, y + h - r, r, Math.PI/2, Math.PI);
+    ctx.lineTo(x, y + r);
+    ctx.arc(x + r, y + r, r, Math.PI, 3*Math.PI/2);
+  }
+  function drawHex(ctx, x, y, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * TAU - Math.PI / 2;
+      const px = x + Math.cos(a) * r;
+      const py = y + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+
+  // ===== MAIN LOOP =====
+  function frame() {
+    const now = Date.now();
+    tickHeader(now);
+    step(now);
+    drawMachine(now);
+    drawMacro(now);
+    requestAnimationFrame(frame);
+  }
+
+  function init() {
+    resizeMacro();
+    resizeMachine();
+    lastBirth = Date.now() - (CADENCE_S - 1.2) * 1000;
+    lastDeath = Date.now();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener("resize", () => {
+    resizeMacro();
+    resizeMachine();
+    // in-flight particles have stale screen coords; drop them
+    for (let i = babies.length - 1; i >= 0; i--) {
+      if (babies[i].phase === "fly") babies.splice(i, 1);
+    }
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>
