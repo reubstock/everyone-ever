@@ -572,7 +572,7 @@
         continue;
       }
       if (b.phase === "drop") {
-        b.t = Math.min((now - b.born) / 900, 1);
+        b.t = Math.min((now - b.born) / 1500, 1);
         if (b.t >= 1) { b.phase = "belt"; b.beltStart = now; }
       } else if (b.phase === "belt") {
         b.t = Math.min((now - b.beltStart) / 3000, 1);
@@ -827,10 +827,11 @@
     mCtx.clearRect(0, 0, mW, mH);
 
     const cx = mW / 2;
-    const beltY = mH - 96;
-    const chamberY = beltY - 230;
-    const chR = 52;
     const tankY = 152; // pushed down to make room for the HUMAN MACHINE title above
+    const beltY = mH - 96;
+    const chR = 52;
+    // chamberY anchored to belt height but clamped so it never crowds the tanks/junction
+    const chamberY = Math.max(beltY - 230, tankY + 84 + 110);
 
     mCtx.strokeStyle = "rgba(220,228,240,0.20)";
     mCtx.lineWidth = 1;
@@ -899,20 +900,21 @@
     mCtx.strokeStyle = "rgba(220,228,240,0.20)";
 
     const glowK = chamberGlow(now);
-    const grad = mCtx.createRadialGradient(cx, chamberY, 0, cx, chamberY, chR + 26);
-    grad.addColorStop(0,    `rgba(170,240,215,${0.35 + glowK * 0.40})`);
-    grad.addColorStop(0.45, `rgba(140,222,199,${0.10 + glowK * 0.15})`);
+    // permanent glow kept inside the hex so it doesn't drown out the baby drop
+    const grad = mCtx.createRadialGradient(cx, chamberY, 0, cx, chamberY, chR + 6);
+    grad.addColorStop(0,    `rgba(170,240,215,${0.30 + glowK * 0.35})`);
+    grad.addColorStop(0.55, `rgba(140,222,199,${0.08 + glowK * 0.12})`);
     grad.addColorStop(1,     "rgba(140,222,199,0)");
     mCtx.fillStyle = grad;
     mCtx.beginPath();
-    mCtx.arc(cx, chamberY, chR + 26, 0, TAU);
+    mCtx.arc(cx, chamberY, chR + 6, 0, TAU);
     mCtx.fill();
 
-    // chamber fertilization flashes
+    // chamber fertilization flash (tighter, doesn't blow out the chute below)
     for (const f of chamberFlashes) {
-      const age = (now - f.born) / 900;
+      const age = (now - f.born) / 800;
       if (age >= 1) continue;
-      const r = 18 + age * 70;
+      const r = 14 + age * 42;
       const a = 0.55 * (1 - age);
       const gr = mCtx.createRadialGradient(cx, chamberY, 0, cx, chamberY, r);
       gr.addColorStop(0,   `rgba(255,235,200,${a.toFixed(3)})`);
@@ -929,22 +931,26 @@
       drawGamete(mCtx, g, now, cx, tankY, chamberY);
     }
 
-    // chute
+    // chute — brighter walls so the drop path is clearly visible
+    mCtx.strokeStyle = "rgba(220,228,240,0.42)";
+    mCtx.lineWidth = 1.2;
     mCtx.beginPath();
-    mCtx.moveTo(cx - 14, chamberY + chR - 6);
-    mCtx.lineTo(cx - 24, beltY - 18);
-    mCtx.lineTo(cx + 24, beltY - 18);
-    mCtx.lineTo(cx + 14, chamberY + chR - 6);
-    mCtx.closePath();
+    mCtx.moveTo(cx - 14, chamberY + chR - 4);
+    mCtx.lineTo(cx - 28, beltY - 18);
+    mCtx.moveTo(cx + 14, chamberY + chR - 4);
+    mCtx.lineTo(cx + 28, beltY - 18);
     mCtx.stroke();
-    mCtx.strokeStyle = "rgba(220,228,240,0.08)";
+    // faint inner guides
+    mCtx.strokeStyle = "rgba(220,228,240,0.14)";
+    mCtx.lineWidth = 1;
     mCtx.beginPath();
-    mCtx.moveTo(cx - 10, chamberY + chR);
-    mCtx.lineTo(cx - 18, beltY - 22);
-    mCtx.moveTo(cx + 10, chamberY + chR);
-    mCtx.lineTo(cx + 18, beltY - 22);
+    mCtx.moveTo(cx - 10, chamberY + chR + 4);
+    mCtx.lineTo(cx - 22, beltY - 22);
+    mCtx.moveTo(cx + 10, chamberY + chR + 4);
+    mCtx.lineTo(cx + 22, beltY - 22);
     mCtx.stroke();
     mCtx.strokeStyle = "rgba(220,228,240,0.20)";
+    mCtx.lineWidth = 1;
 
     // conveyor frame
     mCtx.beginPath();
@@ -998,7 +1004,8 @@
     // babies on machine
     for (const b of babies) {
       if (b.phase === "drop") {
-        const yStart = chamberY + chR - 6;
+        // start at the visible bottom point of the chamber (not inside the glow)
+        const yStart = chamberY + chR + 6;
         const yEnd   = beltY - 6;
         const y = lerp(yStart, yEnd, b.t * b.t);
         drawBaby(mCtx, cx, y, 1);
