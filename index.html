@@ -8,14 +8,16 @@
   :root {
     --bg: #060708;
     --ink: #e6e8ec;
-    --ink-dim: rgba(230,232,236,0.55);
-    --ink-faint: rgba(230,232,236,0.28);
+    --ink-dim: rgba(230,232,236,0.62);
+    --ink-faint: rgba(230,232,236,0.32);
     --hairline: rgba(255,255,255,0.06);
     --accent: #ff9a5a;
     --living: #8cdec7;
+    --living-bright: #b8f0dc;
     --living-soft: rgba(140,222,199,0.5);
     --dead: #d66464;
     --dead-soft: rgba(214,100,100,0.5);
+    --heart: #ff4a6b;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -29,21 +31,21 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: geometricPrecision;
   }
-  .stage { display: grid; grid-template-rows: 88px 1fr; height: 100vh; }
+  .stage { display: grid; grid-template-rows: 96px 1fr; height: 100vh; }
 
   .topbar {
     display: grid;
     grid-template-columns: auto auto 1fr auto;
     align-items: center;
-    padding: 0 28px;
+    padding: 0 30px;
     gap: 32px;
     border-bottom: 1px solid var(--hairline);
-    background: linear-gradient(to bottom, rgba(255,255,255,0.015), transparent);
+    background: linear-gradient(to bottom, rgba(255,255,255,0.02), transparent);
   }
   .clock-wrap { display: flex; align-items: center; gap: 16px; }
   .clock { width: 64px; height: 64px; flex-shrink: 0; }
-  .clock .face { fill: rgba(255,255,255,0.015); stroke: rgba(255,255,255,0.18); stroke-width: 1.2; }
-  .clock .tick-major { stroke: rgba(255,255,255,0.55); stroke-width: 1.4; }
+  .clock .face { fill: rgba(255,255,255,0.015); stroke: rgba(255,255,255,0.20); stroke-width: 1.2; }
+  .clock .tick-major { stroke: rgba(255,255,255,0.6); stroke-width: 1.4; }
   .clock .tick-minor { stroke: rgba(255,255,255,0.18); stroke-width: 0.6; }
   .clock .hand { stroke-linecap: round; }
   .clock .hour   { stroke: var(--ink); stroke-width: 2.6; }
@@ -52,11 +54,11 @@
   .clock .center-outer { fill: var(--ink); }
   .clock .center-inner { fill: var(--accent); }
   .clock-meta {
-    font-size: 9px; letter-spacing: 2px; color: var(--ink-faint);
+    font-size: 10px; letter-spacing: 2px; color: var(--ink-faint);
     text-transform: uppercase; line-height: 1.6;
   }
   .clock-meta strong {
-    display: block; font-size: 12px; color: var(--ink-dim);
+    display: block; font-size: 13px; color: var(--ink-dim);
     letter-spacing: 2.5px; font-weight: 500;
     font-variant-numeric: tabular-nums;
   }
@@ -67,30 +69,38 @@
     padding-left: 28px;
   }
   .cal-date {
-    font-size: 26px; line-height: 1; letter-spacing: 1px;
+    font-size: 28px; line-height: 1; letter-spacing: 1px;
     font-variant-numeric: tabular-nums; font-weight: 500;
   }
   .cal-day {
-    font-size: 10px; letter-spacing: 3.5px; text-transform: uppercase;
-    color: var(--ink-faint); margin-top: 9px;
+    font-size: 11px; letter-spacing: 3.5px; text-transform: uppercase;
+    color: var(--ink-faint); margin-top: 10px;
   }
 
-  .counters { display: flex; gap: 36px; justify-content: flex-end; align-items: center; }
+  .counters { display: flex; gap: 30px; justify-content: flex-end; align-items: center; }
   .counter { text-align: right; }
   .counter .num {
-    font-size: 17px; font-variant-numeric: tabular-nums;
-    letter-spacing: 0.5px; color: var(--ink);
+    font-size: 22px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px;
+    color: var(--ink);
+    line-height: 1;
   }
-  .counter .num.living { color: var(--living); }
-  .counter .num.dead { color: var(--dead); }
+  .counter .num.primary { font-size: 30px; font-weight: 500; }
+  .counter .num.living  { color: var(--living-bright); }
+  .counter .num.dead    { color: var(--dead); }
   .counter .label {
-    font-size: 9px; text-transform: uppercase; letter-spacing: 2.5px;
-    color: var(--ink-faint); margin-top: 6px;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    color: var(--ink-faint);
+    margin-top: 8px;
   }
+  .counter.primary .label { color: var(--ink-dim); }
 
   .panels {
     display: grid;
-    grid-template-columns: 420px 1fr;
+    grid-template-columns: 440px 1fr;
     height: 100%;
     min-height: 0;
   }
@@ -104,9 +114,44 @@
 
   canvas { display: block; width: 100%; height: 100%; }
 
+  /* Big bright machine title — should be the first thing noticed */
+  .machine-title {
+    position: absolute;
+    top: 18px;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    text-align: center;
+    pointer-events: none;
+  }
+  .machine-title h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 7px;
+    color: #ffffff;
+    text-shadow:
+      0 0 16px rgba(140, 222, 199, 0.35),
+      0 0 32px rgba(140, 222, 199, 0.18);
+    font-family: ui-monospace, "SF Mono", monospace;
+  }
+  .machine-title .subtitle {
+    font-size: 9.5px;
+    letter-spacing: 3.5px;
+    color: rgba(230,232,236,0.42);
+    margin-top: 10px;
+    text-transform: uppercase;
+  }
+  .machine-title .accent-line {
+    width: 64px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(140,222,199,0.6), transparent);
+    margin: 12px auto 0;
+  }
+
   .footnote {
     position: absolute; left: 18px; bottom: 14px;
-    font-size: 9px; color: var(--ink-faint);
+    font-size: 9.5px; color: var(--ink-faint);
     letter-spacing: 2px; text-transform: uppercase;
     pointer-events: none;
   }
@@ -114,23 +159,61 @@
   .footnote em { font-style: normal; color: rgba(230,232,236,0.45); }
 
   .panel-label {
-    position: absolute; top: 16px; left: 18px;
-    font-size: 9px; color: var(--ink-faint);
+    position: absolute; top: 16px;
+    font-size: 9.5px; color: var(--ink-faint);
     letter-spacing: 3px; text-transform: uppercase;
     pointer-events: none;
   }
+  .panel-label.right { right: 18px; text-align: right; }
   .panel-label strong {
-    display: block; color: var(--ink-dim); font-size: 11px;
+    display: block; color: var(--ink-dim); font-size: 11.5px;
     letter-spacing: 2.5px; font-weight: 500; margin-bottom: 4px;
   }
-  .panel-label.right { left: auto; right: 18px; text-align: right; }
 
+  /* Hourglass annotations */
   #annotations { position: absolute; inset: 0; pointer-events: none; }
-  .ann { position: absolute; font-size: 10px; line-height: 1.45; color: var(--ink-dim); letter-spacing: 0.3px; max-width: 240px; }
-  .ann .title { color: var(--ink); font-size: 11px; letter-spacing: 0.8px; margin-bottom: 4px; }
-  .ann.living .title { color: var(--living); }
-  .ann.dead .title { color: var(--dead); }
-  .ann .body { color: rgba(230,232,236,0.55); font-size: 10px; }
+  .ann {
+    position: absolute;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink-dim);
+    letter-spacing: 0.3px;
+    max-width: 260px;
+  }
+  .ann .title {
+    color: var(--ink);
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .ann.living .title { color: var(--living-bright); }
+  .ann.dead   .title { color: var(--dead); }
+  .ann .body { color: rgba(230,232,236,0.6); font-size: 11px; }
+
+  /* The featured "You are here" callout — biggest annotation on the page */
+  .ann.featured { max-width: 320px; }
+  .ann.featured .title {
+    font-size: 14px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .ann.featured .bignum {
+    font-size: 38px;
+    font-weight: 600;
+    color: var(--living-bright);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 1px;
+    line-height: 1;
+    margin: 0 0 8px 0;
+    text-shadow: 0 0 24px rgba(140, 222, 199, 0.4);
+  }
+  .ann.featured .body {
+    font-size: 12px;
+    color: rgba(230,232,236,0.7);
+    line-height: 1.5;
+  }
 </style>
 </head>
 <body>
@@ -161,7 +244,7 @@
     <div></div>
 
     <div class="counters">
-      <div class="counter"><div class="num living" id="cAlive">—</div><div class="label">Alive on Earth</div></div>
+      <div class="counter primary"><div class="num living primary" id="cAlive">—</div><div class="label">Alive on Earth</div></div>
       <div class="counter"><div class="num dead"   id="cDied">—</div><div class="label">Humans Ever Died</div></div>
       <div class="counter"><div class="num"        id="cEver">—</div><div class="label">Humans Ever Lived</div></div>
       <div class="counter"><div class="num living" id="cBornSession">0</div><div class="label">Born This Session</div></div>
@@ -171,7 +254,11 @@
 
   <main class="panels">
     <section class="machine-panel">
-      <div class="panel-label"><strong>The Machine</strong>output · one every 8.000 s</div>
+      <div class="machine-title">
+        <h1>HUMAN MACHINE</h1>
+        <div class="accent-line"></div>
+        <div class="subtitle">output · one every 8.000 s</div>
+      </div>
       <canvas id="machineCanvas"></canvas>
       <div class="footnote">1 unit ≈ 34 real births · world rate ≈ 4.3/sec</div>
     </section>
@@ -200,9 +287,11 @@
   const BIRTH_RATE      = 4.3;
   const DEATH_RATE      = 1.9;
   const NET_GROWTH      = BIRTH_RATE - DEATH_RATE;
-  const CADENCE_S       = 8;     // viz-baby every 8s
-  const GAMETE_DURATION = 2500;  // ms egg+sperm take to reach chamber
-  const FLY_DURATION    = 900;   // ms for baby to be "shot" into hourglass
+  const CADENCE_S       = 8;
+  const GAMETE_DURATION = 2500;
+  const FLY_DURATION    = 900;
+
+  const EMOJI_FONT = `'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Symbols', 'Segoe UI Symbol', system-ui`;
 
   const $    = id => document.getElementById(id);
   const fmt  = n => Math.round(n).toLocaleString("en-US");
@@ -286,7 +375,7 @@
   }
 
   function layoutHourglass() {
-    const padTop = 56, padBottom = 56, padLeft = 24, padRight = 300;
+    const padTop = 78, padBottom = 56, padLeft = 24, padRight = 340;
     const usableW = macroW - padLeft - padRight;
     const usableH = macroH - padTop - padBottom;
 
@@ -343,14 +432,16 @@
     return grains;
   }
 
+  // featured: rendered with a large prominent number
   const ANNOTATIONS = [
     { y01: 0.06, side: "left",  kind: "neutral",
       title: "Each grain ≈ 10,000,000 people",
       body:  "Falling into the universe of the living." },
-    { y01: 0.46, side: "right", kind: "living",
+    { y01: 0.42, side: "right", kind: "living", featured: true,
       title: "You are here",
-      body:  "The 810 grains in the upper chamber represent the ~8.1 billion people alive today." },
-    { y01: 0.54, side: "left",  kind: "dead",
+      bignum: "8.1 BILLION",
+      body:  "people alive on Earth today.<br/>810 grains in the upper bulb." },
+    { y01: 0.56, side: "left",  kind: "dead",
       title: "≈ 1.9 deaths per second",
       body:  "About 60 million people die every year. 6 grains of sand pass through the neck." },
     { y01: 0.68, side: "right", kind: "dead",
@@ -379,19 +470,37 @@
       const halfW = profileNormalized(a.y01) * hg.maxHalfW;
       const edgeX = a.side === "right" ? (hg.cx + halfW) : (hg.cx - halfW);
 
-      const leadLen = 56;
+      const leadLen = a.featured ? 72 : 56;
       const labelX = a.side === "right" ? (edgeX + leadLen) : (edgeX - leadLen);
 
       const el = document.createElement("div");
-      el.className = "ann " + (a.kind === "living" ? "living" : a.kind === "dead" ? "dead" : "");
-      el.innerHTML = `<div class="title">${a.title}</div><div class="body">${a.body}</div>`;
-      el.style.top = (yPx - 14) + "px";
-      el.style.maxWidth = (a.side === "right" ? Math.min(240, macroW - labelX - 24) : Math.min(220, labelX - 24)) + "px";
+      const cls = ["ann"];
+      if (a.kind === "living") cls.push("living");
+      if (a.kind === "dead")   cls.push("dead");
+      if (a.featured) cls.push("featured");
+      el.className = cls.join(" ");
+
+      let html = `<div class="title">${a.title}</div>`;
+      if (a.bignum) html += `<div class="bignum">${a.bignum}</div>`;
+      html += `<div class="body">${a.body}</div>`;
+      el.innerHTML = html;
+
+      // vertical anchor — featured uses center, others use top
+      el.style.top = (a.featured ? (yPx - 60) : (yPx - 14)) + "px";
+
+      const maxW = a.featured ? 320 : 240;
+      el.style.maxWidth = (a.side === "right" ? Math.min(maxW, macroW - labelX - 24) : Math.min(maxW, labelX - 24)) + "px";
+
       if (a.side === "right") el.style.left  = (labelX + 8) + "px";
       else                  { el.style.right = (macroW - labelX + 8) + "px"; el.style.textAlign = "right"; }
       wrap.appendChild(el);
 
-      annNodes.push({ ann: a, el, leaderStart: { x: edgeX, y: yPx }, leaderEnd: { x: labelX, y: yPx } });
+      annNodes.push({
+        ann: a, el,
+        leaderStart: { x: edgeX, y: yPx },
+        leaderEnd:   { x: labelX, y: yPx },
+        featured: a.featured,
+      });
     }
   }
 
@@ -410,32 +519,31 @@
   }
 
   // ===== ANIMATION STATE =====
-  const babies = [];          // {phase: pending|drop|belt|fly, ...}
-  const gametes = [];         // egg + sperm traveling down pipes
+  const babies         = [];
+  const gametes        = [];
   const deathParticles = [];
-  const topPulses = [];
-  const bottomPulses = [];
+  const topPulses      = [];
+  const bottomPulses   = [];
+  const chamberFlashes = [];
   let lastFertilization = -Infinity;
-  let lastBirth         = -Infinity;  // when last baby actually started dropping
+  let lastBirth         = -Infinity;
   let lastDeath         = -Infinity;
 
   function step(now) {
-    // every 8s, release an egg + sperm; baby drops once they arrive in chamber
     if (now - lastFertilization >= CADENCE_S * 1000) {
       gametes.push({ type: "egg",   born: now });
       gametes.push({ type: "sperm", born: now });
+      gametes.push({ type: "heart", born: now });
       babies.push({ phase: "pending", dropAt: now + GAMETE_DURATION });
       lastFertilization = now;
     }
 
-    // age gametes
     for (let i = gametes.length - 1; i >= 0; i--) {
       const g = gametes[i];
       g.t = (now - g.born) / GAMETE_DURATION;
       if (g.t >= 1) gametes.splice(i, 1);
     }
 
-    // death-grain trickle
     if (now - lastDeath >= 520 + Math.random() * 280) {
       const jitter = (Math.random() - 0.5) * hg.maxHalfW * 0.06;
       deathParticles.push({
@@ -459,6 +567,7 @@
           b.phase = "drop";
           b.born = now;
           lastBirth = now;
+          chamberFlashes.push({ born: now });
         }
         continue;
       }
@@ -478,7 +587,6 @@
           const ty = hg.yTop + entryY01 * hg.h;
           b.ex = macroRect.left + tx;
           b.ey = macroRect.top  + ty;
-          // shallow arc — "shot" trajectory rather than a gentle lob
           b.arcCx = (b.sx + b.ex) / 2;
           b.arcCy = Math.min(b.sy, b.ey) - 50 - Math.random() * 30;
           b.launchFlash = now;
@@ -504,12 +612,9 @@
       }
     }
 
-    for (let i = topPulses.length - 1; i >= 0; i--) {
-      if (now - topPulses[i].born > 1500) topPulses.splice(i, 1);
-    }
-    for (let i = bottomPulses.length - 1; i >= 0; i--) {
-      if (now - bottomPulses[i].born > 1300) bottomPulses.splice(i, 1);
-    }
+    for (let i = topPulses.length - 1;    i >= 0; i--) if (now - topPulses[i].born    > 1500) topPulses.splice(i, 1);
+    for (let i = bottomPulses.length - 1; i >= 0; i--) if (now - bottomPulses[i].born > 1300) bottomPulses.splice(i, 1);
+    for (let i = chamberFlashes.length - 1; i >= 0; i--) if (now - chamberFlashes[i].born > 900) chamberFlashes.splice(i, 1);
   }
 
   function pickTopSurfacePoint() {
@@ -554,8 +659,8 @@
       const cy = hg.yTop + hg.h * 0.48;
       const halfW = profileNormalized(0.48) * hg.maxHalfW;
       const grad = macroCtx.createRadialGradient(hg.cx, cy, 0, hg.cx, cy, halfW * 1.8);
-      grad.addColorStop(0,   "rgba(140,222,199,0.20)");
-      grad.addColorStop(0.5, "rgba(140,222,199,0.08)");
+      grad.addColorStop(0,   "rgba(140,222,199,0.22)");
+      grad.addColorStop(0.5, "rgba(140,222,199,0.10)");
       grad.addColorStop(1,   "rgba(140,222,199,0)");
       macroCtx.fillStyle = grad;
       macroCtx.fillRect(hg.cx - halfW * 2, cy - halfW * 2, halfW * 4, halfW * 4);
@@ -570,7 +675,6 @@
       macroCtx.arc(g.x, g.y, r, 0, TAU);
       macroCtx.fill();
     }
-
     for (let i = 0; i < hg.bottomGrains.length; i++) {
       const g = hg.bottomGrains[i];
       const t = 0.72 + 0.18 * Math.sin(now / 900 + i * 0.31);
@@ -597,7 +701,7 @@
       macroCtx.fill();
     }
 
-    // baby in flight — actual figure with motion trail
+    // baby in flight — figure with motion trail
     const macroRect = macroCanvas.getBoundingClientRect();
     for (const b of babies) {
       if (b.phase !== "fly") continue;
@@ -605,8 +709,6 @@
       const xS = u*u*b.sx + 2*u*t*b.arcCx + t*t*b.ex;
       const yS = u*u*b.sy + 2*u*t*b.arcCy + t*t*b.ey;
       const x = xS - macroRect.left, y = yS - macroRect.top;
-
-      // motion trail: receding ghost babies
       for (let k = 5; k >= 1; k--) {
         const tt = Math.max(0, t - k * 0.05);
         const uu = 1 - tt;
@@ -614,8 +716,6 @@
         const yT = uu*uu*b.sy + 2*uu*tt*b.arcCy + tt*tt*b.ey - macroRect.top;
         drawBaby(macroCtx, xT, yT, 0.22 / k);
       }
-
-      // baby itself
       drawBaby(macroCtx, x, y, 1);
     }
 
@@ -641,7 +741,7 @@
     }
 
     hourglassPath();
-    macroCtx.strokeStyle = "rgba(230,232,236,0.28)";
+    macroCtx.strokeStyle = "rgba(230,232,236,0.30)";
     macroCtx.lineWidth = 1.2;
     macroCtx.stroke();
     hourglassPath();
@@ -649,18 +749,73 @@
     macroCtx.lineWidth = 3.5;
     macroCtx.stroke();
 
+    // "LIVING" label above the top bulb
+    {
+      const lx = hg.cx;
+      const ly = hg.yTop - 28;
+      macroCtx.save();
+      macroCtx.font = "600 14px ui-monospace, monospace";
+      macroCtx.fillStyle = "rgba(184, 240, 220, 0.95)";
+      macroCtx.textAlign = "center";
+      macroCtx.textBaseline = "middle";
+      if (macroCtx.letterSpacing !== undefined) macroCtx.letterSpacing = "6px";
+      macroCtx.fillText("L I V I N G", lx, ly);
+      if (macroCtx.letterSpacing !== undefined) macroCtx.letterSpacing = "0px";
+      // short bracket marks pointing to the bulb opening
+      macroCtx.strokeStyle = "rgba(184, 240, 220, 0.45)";
+      macroCtx.lineWidth = 1;
+      macroCtx.beginPath();
+      macroCtx.moveTo(hg.cx - hg.maxHalfW * 0.5, hg.yTop - 12);
+      macroCtx.lineTo(hg.cx - hg.maxHalfW * 0.18, hg.yTop - 12);
+      macroCtx.moveTo(hg.cx + hg.maxHalfW * 0.18, hg.yTop - 12);
+      macroCtx.lineTo(hg.cx + hg.maxHalfW * 0.5, hg.yTop - 12);
+      macroCtx.stroke();
+      macroCtx.restore();
+    }
+
+    // Skull and crossbones at the point of death (right side of neck)
+    {
+      const neckHalfW = profileNormalized(0.5) * hg.maxHalfW;
+      const sx = hg.cx + neckHalfW + 26;
+      const sy = hg.yTop + hg.h * 0.5;
+      macroCtx.save();
+      macroCtx.font = `22px ${EMOJI_FONT}`;
+      macroCtx.textAlign = "center";
+      macroCtx.textBaseline = "middle";
+      // subtle red halo
+      const haloGrad = macroCtx.createRadialGradient(sx, sy, 0, sx, sy, 22);
+      haloGrad.addColorStop(0, "rgba(214, 100, 100, 0.30)");
+      haloGrad.addColorStop(1, "rgba(214, 100, 100, 0)");
+      macroCtx.fillStyle = haloGrad;
+      macroCtx.beginPath();
+      macroCtx.arc(sx, sy, 22, 0, TAU);
+      macroCtx.fill();
+      // skull glyph
+      macroCtx.fillStyle = "rgba(255,255,255,1)";
+      macroCtx.fillText("☠️", sx, sy);
+      macroCtx.restore();
+    }
+
+    // annotation leader lines
     macroCtx.setLineDash([3, 4]);
-    macroCtx.strokeStyle = "rgba(230,232,236,0.32)";
+    macroCtx.strokeStyle = "rgba(230,232,236,0.35)";
     macroCtx.lineWidth = 0.9;
     for (const n of annNodes) {
+      if (n.featured) {
+        macroCtx.strokeStyle = "rgba(184,240,220,0.6)";
+        macroCtx.lineWidth = 1.1;
+      } else {
+        macroCtx.strokeStyle = "rgba(230,232,236,0.35)";
+        macroCtx.lineWidth = 0.9;
+      }
       macroCtx.beginPath();
       macroCtx.moveTo(n.leaderStart.x, n.leaderStart.y);
       macroCtx.lineTo(n.leaderEnd.x,   n.leaderEnd.y);
       macroCtx.stroke();
       macroCtx.setLineDash([]);
-      macroCtx.fillStyle = "rgba(230,232,236,0.4)";
+      macroCtx.fillStyle = n.featured ? "rgba(184,240,220,0.85)" : "rgba(230,232,236,0.4)";
       macroCtx.beginPath();
-      macroCtx.arc(n.leaderStart.x, n.leaderStart.y, 1.6, 0, TAU);
+      macroCtx.arc(n.leaderStart.x, n.leaderStart.y, n.featured ? 2.5 : 1.6, 0, TAU);
       macroCtx.fill();
       macroCtx.setLineDash([3, 4]);
     }
@@ -675,21 +830,23 @@
     const beltY = mH - 96;
     const chamberY = beltY - 230;
     const chR = 52;
+    const tankY = 152; // pushed down to make room for the HUMAN MACHINE title above
 
     mCtx.strokeStyle = "rgba(220,228,240,0.20)";
     mCtx.lineWidth = 1;
 
-    // input vessels — XX (egg) and XY (sperm)
-    const tankY = 100;
+    // three tanks: XX (egg) ·  ❤  · XY (sperm)
     const tankConfigs = [
-      { off: -42, label: "XX", icon: "egg"   },
-      { off:  42, label: "XY", icon: "sperm" },
+      { off: -68, label: "XX",  icon: "egg"   },
+      { off:   0, label: null,  icon: "heart" },
+      { off:  68, label: "XY",  icon: "sperm" },
     ];
     for (const t of tankConfigs) {
       const tx = cx + t.off;
       drawRoundedRect(mCtx, tx - 24, tankY - 28, 48, 56, 9);
       mCtx.stroke();
-      mCtx.strokeStyle = "rgba(220,228,240,0.1)";
+      // cap line
+      mCtx.strokeStyle = "rgba(220,228,240,0.10)";
       mCtx.beginPath();
       mCtx.moveTo(tx - 18, tankY - 14);
       mCtx.lineTo(tx + 18, tankY - 14);
@@ -697,23 +854,33 @@
       mCtx.strokeStyle = "rgba(220,228,240,0.20)";
       // pipe → junction
       mCtx.beginPath();
-      mCtx.moveTo(tx, tankY + 28);
-      mCtx.lineTo(tx, tankY + 56);
-      mCtx.lineTo(cx, tankY + 84);
+      if (t.off === 0) {
+        mCtx.moveTo(tx, tankY + 28);
+        mCtx.lineTo(cx, tankY + 84);
+      } else {
+        mCtx.moveTo(tx, tankY + 28);
+        mCtx.lineTo(tx, tankY + 56);
+        mCtx.lineTo(cx, tankY + 84);
+      }
       mCtx.stroke();
-      // chromosome label
-      mCtx.fillStyle = "rgba(230,232,236,0.82)";
-      mCtx.font = "600 11px ui-monospace, monospace";
-      mCtx.textAlign = "center";
-      mCtx.textBaseline = "middle";
-      mCtx.fillText(t.label, tx, tankY - 4);
-      mCtx.textBaseline = "alphabetic";
-      // gamete icon
-      if (t.icon === "egg") drawEggIcon(mCtx, tx, tankY + 13, now);
-      else                  drawSpermIcon(mCtx, tx, tankY + 13, now);
+
+      // label on top
+      if (t.label) {
+        mCtx.fillStyle = "rgba(235,238,244,0.92)";
+        mCtx.font = "600 11.5px ui-monospace, monospace";
+        mCtx.textAlign = "center";
+        mCtx.textBaseline = "middle";
+        mCtx.fillText(t.label, tx, tankY - 4);
+        mCtx.textBaseline = "alphabetic";
+      }
+
+      // icon below label
+      if (t.icon === "egg")        drawEggIcon(mCtx,   tx, tankY + 13, now);
+      else if (t.icon === "sperm") drawSpermIcon(mCtx, tx, tankY + 13, now);
+      else if (t.icon === "heart") drawHeartIcon(mCtx, tx, tankY + 13, now);
     }
 
-    // junction node
+    // junction
     mCtx.beginPath();
     mCtx.arc(cx, tankY + 84, 4.5, 0, TAU);
     mCtx.stroke();
@@ -741,7 +908,23 @@
     mCtx.arc(cx, chamberY, chR + 26, 0, TAU);
     mCtx.fill();
 
-    // active gametes flowing from tanks toward chamber center
+    // chamber fertilization flashes
+    for (const f of chamberFlashes) {
+      const age = (now - f.born) / 900;
+      if (age >= 1) continue;
+      const r = 18 + age * 70;
+      const a = 0.55 * (1 - age);
+      const gr = mCtx.createRadialGradient(cx, chamberY, 0, cx, chamberY, r);
+      gr.addColorStop(0,   `rgba(255,235,200,${a.toFixed(3)})`);
+      gr.addColorStop(0.5, `rgba(255,200,160,${(a*0.6).toFixed(3)})`);
+      gr.addColorStop(1,    "rgba(255,200,160,0)");
+      mCtx.fillStyle = gr;
+      mCtx.beginPath();
+      mCtx.arc(cx, chamberY, r, 0, TAU);
+      mCtx.fill();
+    }
+
+    // gametes flowing down
     for (const g of gametes) {
       drawGamete(mCtx, g, now, cx, tankY, chamberY);
     }
@@ -797,7 +980,7 @@
     mCtx.stroke();
     mCtx.setLineDash([]);
 
-    // cadence bar (teal)
+    // cadence bar
     const sinceLast = Math.min(CADENCE_S, (now - lastFertilization) / 1000);
     const barFrac = sinceLast / CADENCE_S;
     mCtx.strokeStyle = "rgba(140,222,199,0.7)";
@@ -822,14 +1005,13 @@
       } else if (b.phase === "belt") {
         const xStart = cx;
         const xEnd   = mW + 22;
-        // ease-out toward the end for a "launch" feel
         const eased = b.t < 0.7 ? (b.t / 0.7) * 0.7 : 0.7 + (1 - Math.pow(1 - (b.t - 0.7) / 0.3, 2)) * 0.3;
         const x = lerp(xStart, xEnd, eased);
         drawBaby(mCtx, x, beltY - 6, 1 - b.t * 0.15);
       }
     }
 
-    // launch flash at right edge when baby exits onto fly trajectory
+    // launch flash at right edge
     for (const b of babies) {
       if (b.phase !== "fly" || !b.launchFlash) continue;
       const age = (now - b.launchFlash) / 300;
@@ -846,10 +1028,10 @@
       mCtx.fill();
     }
 
-    mCtx.fillStyle = "rgba(230,232,236,0.34)";
+    // schematic labels (FORMATION CHAMBER, CONVEYOR →)
+    mCtx.fillStyle = "rgba(230,232,236,0.36)";
     mCtx.font = "9px ui-monospace, monospace";
     mCtx.textAlign = "center";
-    mCtx.fillText("I N P U T   V E S S E L S", cx, tankY - 42);
     mCtx.fillText("F O R M A T I O N   C H A M B E R", cx, chamberY - chR - 10);
     mCtx.textAlign = "left";
     mCtx.fillText("C O N V E Y O R   →", 60, beltY - 22);
@@ -865,12 +1047,11 @@
     return 0.18 + 0.06 * Math.sin(now / 600);
   }
 
-  // ===== BABY + GAMETE SHAPES =====
+  // ===== SHAPES =====
   function drawBaby(ctx, x, y, alpha) {
     ctx.save();
     ctx.globalAlpha = alpha;
 
-    // glow halo
     const glow = ctx.createRadialGradient(x, y, 0, x, y, 26);
     glow.addColorStop(0,   "rgba(200,250,235,0.70)");
     glow.addColorStop(0.5, "rgba(140,222,199,0.22)");
@@ -880,7 +1061,7 @@
     ctx.arc(x, y, 26, 0, TAU);
     ctx.fill();
 
-    // swaddled body — teardrop tapering up to the neck
+    // swaddled body — teardrop tapering to a neck
     ctx.fillStyle = "rgba(220,250,238,0.94)";
     ctx.beginPath();
     ctx.moveTo(x - 3.5, y - 1);
@@ -909,7 +1090,7 @@
     ctx.arc(x, y - 3.2, 0.9, 0.2, Math.PI - 0.2);
     ctx.stroke();
 
-    // small tuft of hair
+    // hair tuft
     ctx.strokeStyle = "rgba(40,70,65,0.45)";
     ctx.lineWidth = 0.6;
     ctx.beginPath();
@@ -931,19 +1112,16 @@
     ctx.arc(x, y, 14, 0, TAU);
     ctx.fill();
 
-    // zona pellucida (outer ring)
-    ctx.strokeStyle = "rgba(235,180,180,0.6)";
+    ctx.strokeStyle = "rgba(235,180,180,0.65)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(x, y, 7.5, 0, TAU);
     ctx.stroke();
-    // cytoplasm
-    ctx.fillStyle = "rgba(255,200,200,0.45)";
+    ctx.fillStyle = "rgba(255,200,200,0.5)";
     ctx.beginPath();
     ctx.arc(x, y, 5.8, 0, TAU);
     ctx.fill();
-    // nucleus
-    ctx.fillStyle = "rgba(255,230,230,0.92)";
+    ctx.fillStyle = "rgba(255,230,230,0.95)";
     ctx.beginPath();
     ctx.arc(x, y, 1.9, 0, TAU);
     ctx.fill();
@@ -953,20 +1131,18 @@
   function drawSpermIcon(ctx, x, y, now) {
     ctx.save();
     const glow = ctx.createRadialGradient(x, y, 0, x, y, 14);
-    glow.addColorStop(0, "rgba(200,220,255,0.22)");
+    glow.addColorStop(0, "rgba(200,220,255,0.25)");
     glow.addColorStop(1, "rgba(200,220,255,0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(x, y, 14, 0, TAU);
     ctx.fill();
 
-    // head (pointing down toward pipe exit)
     ctx.fillStyle = "rgba(215,232,255,0.95)";
     ctx.beginPath();
     ctx.ellipse(x, y - 2.5, 2.3, 3.4, 0, 0, TAU);
     ctx.fill();
-    // wiggling tail
-    ctx.strokeStyle = "rgba(215,232,255,0.7)";
+    ctx.strokeStyle = "rgba(215,232,255,0.72)";
     ctx.lineWidth = 0.9;
     ctx.beginPath();
     for (let i = 0; i <= 12; i++) {
@@ -979,9 +1155,44 @@
     ctx.restore();
   }
 
-  // gamete in transit: tank exit → bend → junction → chamber center
+  // Vector heart path — reliable everywhere (emoji-on-canvas is flaky)
+  function drawHeartShape(ctx, x, y, size, fillStyle) {
+    ctx.fillStyle = fillStyle;
+    ctx.beginPath();
+    const s = size;
+    ctx.moveTo(x, y - s * 0.20);
+    ctx.bezierCurveTo(x - s * 0.55, y - s * 0.85, x - s,       y - s * 0.40, x - s,       y - s * 0.05);
+    ctx.bezierCurveTo(x - s,       y + s * 0.30, x - s * 0.50, y + s * 0.55, x,           y + s * 0.95);
+    ctx.bezierCurveTo(x + s * 0.50, y + s * 0.55, x + s,       y + s * 0.30, x + s,       y - s * 0.05);
+    ctx.bezierCurveTo(x + s,       y - s * 0.40, x + s * 0.55, y - s * 0.85, x,           y - s * 0.20);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawHeartIcon(ctx, x, y, now) {
+    ctx.save();
+    const pulse = 0.88 + 0.12 * Math.sin(now / 380); // gentle "heartbeat"
+
+    // halo
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, 18);
+    glow.addColorStop(0, `rgba(255, 74, 107, ${(0.45 * pulse).toFixed(3)})`);
+    glow.addColorStop(1, "rgba(255, 74, 107, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, 18, 0, TAU);
+    ctx.fill();
+
+    // vector heart body
+    const size = 7.5 * pulse;
+    drawHeartShape(ctx, x, y - 0.5, size, "#ff3d5e");
+
+    // small highlight (top-left)
+    drawHeartShape(ctx, x - size * 0.28, y - size * 0.45, size * 0.28, "rgba(255, 210, 220, 0.55)");
+
+    ctx.restore();
+  }
+
   function drawGamete(ctx, g, now, cx, tankY, chamberY) {
-    const side = (g.type === "egg") ? -42 : 42;
     const tankExitY = tankY + 28;
     const bendY     = tankY + 56;
     const junctionY = tankY + 84;
@@ -989,25 +1200,39 @@
 
     const t = Math.max(0, Math.min(0.999, g.t));
     let x, y;
-    if (t < 0.30) {
-      const u = t / 0.30;
-      x = cx + side;
-      y = tankExitY + (bendY - tankExitY) * u;
-    } else if (t < 0.55) {
-      const u = (t - 0.30) / 0.25;
-      x = (cx + side) + (-side) * u; // toward cx
-      y = bendY + (junctionY - bendY) * u;
+
+    if (g.type === "heart") {
+      if (t < 0.55) {
+        const u = t / 0.55;
+        x = cx;
+        y = tankExitY + (junctionY - tankExitY) * u;
+      } else {
+        const u = (t - 0.55) / 0.45;
+        x = cx;
+        y = junctionY + (targetY - junctionY) * (u * u);
+      }
     } else {
-      const u = (t - 0.55) / 0.45;
-      x = cx;
-      y = junctionY + (targetY - junctionY) * (u * u); // accelerate into chamber
+      const side = (g.type === "egg") ? -68 : 68;
+      if (t < 0.30) {
+        const u = t / 0.30;
+        x = cx + side;
+        y = tankExitY + (bendY - tankExitY) * u;
+      } else if (t < 0.55) {
+        const u = (t - 0.30) / 0.25;
+        x = (cx + side) + (-side) * u;
+        y = bendY + (junctionY - bendY) * u;
+      } else {
+        const u = (t - 0.55) / 0.45;
+        x = cx;
+        y = junctionY + (targetY - junctionY) * (u * u);
+      }
     }
 
     const fade = Math.min(1, t * 5) * Math.min(1, (1 - t) * 7);
+    ctx.save();
+    ctx.globalAlpha = fade;
 
     if (g.type === "egg") {
-      ctx.save();
-      ctx.globalAlpha = fade;
       const glow = ctx.createRadialGradient(x, y, 0, x, y, 11);
       glow.addColorStop(0, "rgba(255,200,200,0.75)");
       glow.addColorStop(1, "rgba(255,200,200,0)");
@@ -1023,13 +1248,7 @@
       ctx.beginPath();
       ctx.arc(x, y, 1, 0, TAU);
       ctx.fill();
-      ctx.restore();
-    } else {
-      ctx.save();
-      ctx.globalAlpha = fade;
-      // travel direction tangent for tail orientation
-      // before junction the sperm moves down/inward; after, straight down.
-      const goingDown = (t >= 0.55) || (t < 0.30);
+    } else if (g.type === "sperm") {
       const glow = ctx.createRadialGradient(x, y, 0, x, y, 11);
       glow.addColorStop(0, "rgba(200,220,255,0.6)");
       glow.addColorStop(1, "rgba(200,220,255,0)");
@@ -1037,25 +1256,32 @@
       ctx.beginPath();
       ctx.arc(x, y, 11, 0, TAU);
       ctx.fill();
-
       ctx.fillStyle = "rgba(220,235,255,0.95)";
       ctx.beginPath();
       ctx.ellipse(x, y, 1.9, 2.7, 0, 0, TAU);
       ctx.fill();
-
-      // wiggling tail trailing back along travel direction
-      ctx.strokeStyle = "rgba(220,235,255,0.7)";
+      ctx.strokeStyle = "rgba(220,235,255,0.72)";
       ctx.lineWidth = 0.85;
       ctx.beginPath();
       for (let i = 0; i <= 9; i++) {
-        const ty = y - 2 - i * 0.75; // tail trails upward (back along path)
+        const ty = y - 2 - i * 0.75;
         const wave = Math.sin((now / 80) + i * 0.6) * 1.3 * (i / 9);
         if (i === 0) ctx.moveTo(x, ty);
         else         ctx.lineTo(x + wave, ty);
       }
       ctx.stroke();
-      ctx.restore();
+    } else if (g.type === "heart") {
+      const pulse = 0.9 + 0.1 * Math.sin(now / 300);
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, 12);
+      glow.addColorStop(0, "rgba(255, 74, 107, 0.55)");
+      glow.addColorStop(1, "rgba(255, 74, 107, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, 12, 0, TAU);
+      ctx.fill();
+      drawHeartShape(ctx, x, y - 0.4, 4.5 * pulse, "#ff3d5e");
     }
+    ctx.restore();
   }
 
   function drawRoundedRect(ctx, x, y, w, h, r) {
