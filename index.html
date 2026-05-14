@@ -1315,13 +1315,26 @@
   }
 
   // ===== MAIN LOOP =====
-  function frame() {
-    const now = Date.now();
-    tickHeader(now);
-    step(now);
-    drawMachine(now);
-    drawMacro(now);
+  let rafPending = false;
+  function scheduleFrame() {
+    if (rafPending) return;
+    rafPending = true;
     requestAnimationFrame(frame);
+  }
+
+  function frame() {
+    rafPending = false;
+    const now = Date.now();
+    try {
+      tickHeader(now);
+      step(now);
+      drawMachine(now);
+      drawMacro(now);
+    } catch (e) {
+      // never let one bad frame kill the whole loop
+      console.error("[everyone-ever] frame error:", e);
+    }
+    scheduleFrame();
   }
 
   function init() {
@@ -1329,8 +1342,26 @@
     resizeMachine();
     lastFertilization = Date.now() - (CADENCE_S - 0.8) * 1000;
     lastDeath = Date.now();
-    requestAnimationFrame(frame);
+    scheduleFrame();
   }
+
+  // Re-kick the loop whenever the tab becomes visible again — browsers freeze
+  // RAF on hidden tabs and don't always auto-resume the original chain.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") scheduleFrame();
+  });
+
+  // Failsafe: if a full second passes with no animation tick, force a restart.
+  // (rafPending stays true if RAF never fired; this catches any stalled chain.)
+  let lastTick = Date.now();
+  const origTickHeader = tickHeader;
+  tickHeader = function(now) { lastTick = now; return origTickHeader(now); };
+  setInterval(() => {
+    if (Date.now() - lastTick > 1000 && document.visibilityState === "visible") {
+      rafPending = false;
+      scheduleFrame();
+    }
+  }, 500);
 
   window.addEventListener("resize", () => {
     resizeMacro();
