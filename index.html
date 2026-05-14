@@ -742,10 +742,14 @@
     mCtx.strokeStyle = "rgba(220,228,240,0.20)";
     mCtx.lineWidth = 1;
 
-    // input vessels (three tanks)
+    // input vessels (two chromosomal tanks: XX and XY)
     const tankY = 100;
-    for (let i = -1; i <= 1; i++) {
-      const tx = cx + i * 64;
+    const tankConfigs = [
+      { off: -42, label: "XX" },
+      { off:  42, label: "XY" },
+    ];
+    for (const t of tankConfigs) {
+      const tx = cx + t.off;
       drawRoundedRect(mCtx, tx - 24, tankY - 28, 48, 56, 9);
       mCtx.stroke();
       mCtx.strokeStyle = "rgba(220,228,240,0.1)";
@@ -759,6 +763,13 @@
       mCtx.lineTo(tx, tankY + 56);
       mCtx.lineTo(cx, tankY + 84);
       mCtx.stroke();
+      // chromosome label inside tank
+      mCtx.fillStyle = "rgba(230,232,236,0.82)";
+      mCtx.font = "600 13px ui-monospace, monospace";
+      mCtx.textAlign = "center";
+      mCtx.textBaseline = "middle";
+      mCtx.fillText(t.label, tx, tankY + 6);
+      mCtx.textBaseline = "alphabetic";
     }
     mCtx.beginPath();
     mCtx.arc(cx, tankY + 84, 4.5, 0, TAU);
