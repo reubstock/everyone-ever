@@ -7,10 +7,10 @@
 <style>
   :root {
     --bg: #060708;
-    --ink: #e6e8ec;
-    --ink-dim: rgba(230,232,236,0.62);
-    --ink-faint: rgba(230,232,236,0.32);
-    --hairline: rgba(255,255,255,0.06);
+    --ink: #f1f3f7;
+    --ink-dim: rgba(241,243,247,0.78);
+    --ink-faint: rgba(241,243,247,0.5);
+    --hairline: rgba(255,255,255,0.08);
     --accent: #ff9a5a;
     --living: #8cdec7;
     --living-bright: #b8f0dc;
@@ -151,12 +151,16 @@
 
   .footnote {
     position: absolute; left: 18px; bottom: 14px;
-    font-size: 9.5px; color: var(--ink-faint);
-    letter-spacing: 2px; text-transform: uppercase;
+    font-size: 10px; color: rgba(241,243,247,0.62);
+    letter-spacing: 1.6px; text-transform: uppercase;
     pointer-events: none;
+    max-width: calc(100% - 36px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .footnote.right { left: auto; right: 18px; }
-  .footnote em { font-style: normal; color: rgba(230,232,236,0.45); }
+  .footnote em { font-style: normal; color: rgba(241,243,247,0.5); }
 
   .panel-label {
     position: absolute; top: 16px;
@@ -174,22 +178,22 @@
   #annotations { position: absolute; inset: 0; pointer-events: none; }
   .ann {
     position: absolute;
-    font-size: 11px;
+    font-size: 11.5px;
     line-height: 1.5;
     color: var(--ink-dim);
     letter-spacing: 0.3px;
     max-width: 260px;
   }
   .ann .title {
-    color: var(--ink);
-    font-size: 12px;
+    color: #ffffff;
+    font-size: 12.5px;
     letter-spacing: 0.8px;
-    margin-bottom: 4px;
-    font-weight: 500;
+    margin-bottom: 5px;
+    font-weight: 600;
   }
   .ann.living .title { color: var(--living-bright); }
-  .ann.dead   .title { color: var(--dead); }
-  .ann .body { color: rgba(230,232,236,0.6); font-size: 11px; }
+  .ann.dead   .title { color: #ee9c9c; }
+  .ann .body { color: rgba(241,243,247,0.82); font-size: 11.5px; }
 
   /* The featured "You are here" callout — biggest annotation on the page */
   .ann.featured { max-width: 320px; }
@@ -245,7 +249,6 @@
 
     <div class="counters">
       <div class="counter primary"><div class="num living primary" id="cAlive">—</div><div class="label">Alive on Earth</div></div>
-      <div class="counter"><div class="num dead"   id="cDied">—</div><div class="label">Humans Ever Died</div></div>
       <div class="counter"><div class="num"        id="cEver">—</div><div class="label">Humans Ever Lived</div></div>
       <div class="counter"><div class="num living" id="cBornSession">0</div><div class="label">Born This Session</div></div>
       <div class="counter"><div class="num dead"   id="cDiedSession">0</div><div class="label">Died This Session</div></div>
@@ -316,7 +319,7 @@
   const hHour   = $("hHour"), hMin = $("hMin"), hSec = $("hSec");
   const timeNow = $("timeNow"), utcOffset = $("utcOffset");
   const calDate = $("calDate"), calDay = $("calDay");
-  const cAlive  = $("cAlive"), cDied = $("cDied"), cEver = $("cEver");
+  const cAlive  = $("cAlive"), cEver = $("cEver");
   const cBornSession = $("cBornSession"), cDiedSession = $("cDiedSession");
 
   const sessionStart = Date.now();
@@ -338,7 +341,6 @@
 
     const elapsed = (now - sessionStart) / 1000;
     cAlive.textContent       = fmt(ALIVE_NOW_2026     + elapsed * NET_GROWTH);
-    cDied.textContent        = fmt(EVER_DIED_NOW_2026 + elapsed * DEATH_RATE);
     cEver.textContent        = fmt(TOTAL_EVER_2026    + elapsed * BIRTH_RATE);
     cBornSession.textContent = fmt(elapsed * BIRTH_RATE);
     cDiedSession.textContent = fmt(elapsed * DEATH_RATE);
@@ -444,16 +446,13 @@
     { y01: 0.56, side: "left",  kind: "dead",
       title: "≈ 1.9 deaths per second",
       body:  "About 60 million people die every year. 6 grains of sand pass through the neck." },
-    { y01: 0.68, side: "right", kind: "dead",
-      title: "About 109 billion have ever died",
-      body:  "10,900 grains of sand have already fallen through." },
-    { y01: 0.81, side: "right", kind: "dead",
+    { y01: 0.72, side: "right", kind: "dead",
       title: "Half of the dead were children",
       body:  "(in pre-modern times, half of all children died before age 5.)" },
-    { y01: 0.91, side: "right", kind: "dead",
+    { y01: 0.86, side: "right", kind: "dead",
       title: "Socrates lies here · 399 BCE",
       body:  "Roughly half of everyone who ever lived has lived in the last 2,000 years." },
-    { y01: 0.985, side: "right", kind: "dead",
+    { y01: 0.965, side: "right", kind: "dead",
       title: "The first agriculturalists",
       body:  "Only about 9 billion people lived before the Agricultural Revolution." },
   ];
