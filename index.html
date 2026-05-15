@@ -794,22 +794,22 @@
       macroCtx.restore();
     }
 
-    // Skull and crossbones at the point of death (right side of neck)
+    // Skull and crossbones at the point of death (right of neck) — doubled in size
     {
       const neckHalfW = profileNormalized(0.5) * hg.maxHalfW;
-      const sx = hg.cx + neckHalfW + 26;
+      const sx = hg.cx + neckHalfW + 46;
       const sy = hg.yTop + hg.h * 0.5;
       macroCtx.save();
-      macroCtx.font = `22px ${EMOJI_FONT}`;
+      macroCtx.font = `44px ${EMOJI_FONT}`;
       macroCtx.textAlign = "center";
       macroCtx.textBaseline = "middle";
-      // subtle red halo
-      const haloGrad = macroCtx.createRadialGradient(sx, sy, 0, sx, sy, 22);
-      haloGrad.addColorStop(0, "rgba(214, 100, 100, 0.30)");
+      // wider red halo to match the bigger glyph
+      const haloGrad = macroCtx.createRadialGradient(sx, sy, 0, sx, sy, 40);
+      haloGrad.addColorStop(0, "rgba(214, 100, 100, 0.34)");
       haloGrad.addColorStop(1, "rgba(214, 100, 100, 0)");
       macroCtx.fillStyle = haloGrad;
       macroCtx.beginPath();
-      macroCtx.arc(sx, sy, 22, 0, TAU);
+      macroCtx.arc(sx, sy, 40, 0, TAU);
       macroCtx.fill();
       // skull glyph
       macroCtx.fillStyle = "rgba(255,255,255,1)";
@@ -899,7 +899,7 @@
       // icon below label — bigger
       if (t.icon === "egg")        drawEggIcon(mCtx,   tx, tankY + 16, now);
       else if (t.icon === "sperm") drawSpermIcon(mCtx, tx, tankY + 16, now);
-      else if (t.icon === "heart") drawHeartIcon(mCtx, tx, tankY + 16, now);
+      else if (t.icon === "heart") drawHeartIcon(mCtx, tx, tankY + 9,  now);
     }
 
     // junction
