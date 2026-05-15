@@ -166,6 +166,62 @@
     margin: 12px auto 0;
   }
 
+  /* Readout next to the formation chamber */
+  .chamber-readout {
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    transform: translateY(-50%);
+    width: 158px;
+    z-index: 2;
+    pointer-events: none;
+    text-align: right;
+  }
+  .chamber-readout .readout-num {
+    font-size: 34px;
+    font-weight: 600;
+    color: var(--living-bright);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    text-shadow: 0 0 18px rgba(140, 222, 199, 0.45);
+  }
+  .chamber-readout .readout-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2.2px;
+    color: rgba(241,243,247,0.7);
+    margin-top: 9px;
+    line-height: 1.4;
+  }
+  .chamber-readout .readout-legend {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.10);
+    font-size: 10.5px;
+    color: rgba(241,243,247,0.7);
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .chamber-readout .readout-legend strong {
+    color: var(--living-bright);
+    font-weight: 700;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .chamber-readout .legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--living-bright);
+    box-shadow: 0 0 8px rgba(140, 222, 199, 0.7);
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
   .footnote {
     position: absolute; left: 18px; bottom: 14px;
     font-size: 10px; color: rgba(241,243,247,0.62);
@@ -267,7 +323,6 @@
     <div class="counters">
       <div class="counter primary"><div class="num living primary" id="cAlive">—</div><div class="label">Alive on Earth</div></div>
       <div class="counter"><div class="num"        id="cEver">—</div><div class="label">Humans Ever Lived</div></div>
-      <div class="counter"><div class="num living" id="cBornSession">0</div><div class="label">Born This Session</div></div>
       <div class="counter"><div class="num dead"   id="cDiedSession">0</div><div class="label">Died This Session</div></div>
     </div>
   </header>
@@ -280,7 +335,15 @@
         <div class="subtitle">output · one every 8.000 s</div>
       </div>
       <canvas id="machineCanvas"></canvas>
-      <div class="footnote">1 unit ≈ 34 real births · world rate ≈ 4.3/sec</div>
+      <div class="chamber-readout">
+        <div class="readout-num" id="cBornSession">0</div>
+        <div class="readout-label">Babies Born<br/>This Session</div>
+        <div class="readout-legend">
+          <span class="legend-dot"></span>
+          1 baby&nbsp;≈&nbsp;<strong>34</strong>&nbsp;real births
+        </div>
+      </div>
+      <div class="footnote">world birth rate ≈ 4.3 / sec</div>
     </section>
     <section class="macro-panel">
       <div class="panel-label right"><strong>Humanity Today &amp; Humanity's Past</strong>1 grain ≈ 10 million people</div>
