@@ -42,7 +42,31 @@
     border-bottom: 1px solid var(--hairline);
     background: linear-gradient(to bottom, rgba(255,255,255,0.02), transparent);
   }
-  .clock-wrap { display: flex; align-items: center; gap: 16px; }
+  .datebar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .earth-icon {
+    font-size: 44px;
+    line-height: 1;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 10px rgba(80, 160, 220, 0.4));
+    animation: earth-rotate 80s linear infinite;
+    transform-origin: center;
+    display: inline-block;
+  }
+  @keyframes earth-rotate {
+    0%   { transform: rotate(-3deg); }
+    50%  { transform: rotate(3deg); }
+    100% { transform: rotate(-3deg); }
+  }
+
+  .clock-wrap {
+    display: flex; align-items: center; gap: 16px;
+    border-left: 1px solid var(--hairline);
+    padding-left: 28px;
+  }
   .clock { width: 64px; height: 64px; flex-shrink: 0; }
   .clock .face { fill: rgba(255,255,255,0.015); stroke: rgba(255,255,255,0.20); stroke-width: 1.2; }
   .clock .tick-major { stroke: rgba(255,255,255,0.6); stroke-width: 1.4; }
@@ -65,8 +89,6 @@
 
   .calendar {
     display: flex; flex-direction: column; justify-content: center;
-    border-left: 1px solid var(--hairline);
-    padding-left: 28px;
   }
   .cal-date {
     font-size: 28px; line-height: 1; letter-spacing: 1px;
@@ -242,7 +264,9 @@
       text-align: center;
     }
     .clock-wrap { display: none; }
-    .calendar { border-left: none; padding-left: 0; align-items: center; text-align: center; }
+    .datebar { justify-content: center; gap: 12px; }
+    .earth-icon { font-size: 36px; }
+    .calendar { align-items: center; text-align: center; }
     .cal-date { font-size: 22px; }
     .counters { justify-content: center; gap: 22px; flex-wrap: wrap; }
     .counter .num { font-size: 18px; }
@@ -368,6 +392,14 @@
 <div class="stage">
 
   <header class="topbar">
+    <div class="datebar">
+      <span class="earth-icon" aria-hidden="true">🌍</span>
+      <div class="calendar">
+        <div class="cal-date" id="calDate">—</div>
+        <div class="cal-day"  id="calDay">—</div>
+      </div>
+    </div>
+
     <div class="clock-wrap">
       <svg class="clock" viewBox="-50 -50 100 100" aria-hidden="true">
         <circle class="face" cx="0" cy="0" r="46"></circle>
@@ -382,11 +414,6 @@
         <strong id="timeNow">--:--:--</strong>
         Local · UTC<span id="utcOffset">—</span>
       </div>
-    </div>
-
-    <div class="calendar">
-      <div class="cal-date" id="calDate">—</div>
-      <div class="cal-day"  id="calDay">—</div>
     </div>
 
     <div></div>
