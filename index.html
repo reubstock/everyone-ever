@@ -229,6 +229,10 @@
     .machine-panel { display: none; }
     .panel-label.right { right: 14px; top: 12px; }
     .footnote { font-size: 9px; letter-spacing: 1.2px; }
+    .macro-headline { top: 12px; }
+    .macro-headline .hl-num { font-size: 30px; }
+    .macro-headline .hl-rest { font-size: 17px; }
+    .macro-headline .hl-dead { font-size: 19px; }
     .topbar {
       grid-template-columns: 1fr;
       grid-auto-rows: auto;
@@ -277,6 +281,41 @@
   .panel-label strong {
     display: block; color: var(--ink-dim); font-size: 11.5px;
     letter-spacing: 2.5px; font-weight: 500; margin-bottom: 4px;
+  }
+
+  /* Headline — the emotional anchor */
+  .macro-headline {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    z-index: 3;
+    pointer-events: none;
+    font-family: ui-monospace, "SF Mono", monospace;
+    color: rgba(255,255,255,0.92);
+    letter-spacing: 0.5px;
+    line-height: 1.05;
+  }
+  .macro-headline .hl-rest {
+    font-size: 24px;
+    font-weight: 300;
+  }
+  .macro-headline .hl-num {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--dead);
+    letter-spacing: 1px;
+    text-shadow:
+      0 0 22px rgba(214, 100, 100, 0.55),
+      0 0 44px rgba(214, 100, 100, 0.28);
+    margin-right: 4px;
+  }
+  .macro-headline .hl-dead {
+    color: var(--dead);
+    font-weight: 600;
+    font-size: 26px;
+    text-shadow: 0 0 18px rgba(214, 100, 100, 0.4);
   }
 
   /* Hourglass annotations */
@@ -378,10 +417,13 @@
       <div class="footnote">world birth rate ≈ 4.3 / sec</div>
     </section>
     <section class="macro-panel">
-      <div class="panel-label right"><strong>Humanity Today &amp; Humanity's Past</strong>1 grain ≈ 10 million people</div>
+      <div class="macro-headline">
+        <span class="hl-num">94%</span><span class="hl-rest"> of humans </span><span class="hl-dead">are dead</span><span class="hl-rest">.</span>
+      </div>
+      <div class="panel-label right"><strong>1 grain ≈ 10M people</strong>after Max Roser · OWID</div>
       <canvas id="macroCanvas"></canvas>
       <div id="annotations"></div>
-      <div class="footnote right">after Max Roser · Our World in Data · <em>estimates from PRB &amp; UN Population Division</em></div>
+      <div class="footnote right">estimates from PRB &amp; UN Population Division</div>
     </section>
   </main>
 </div>
@@ -406,7 +448,55 @@
   const GAMETE_DURATION = 2500;
   const FLY_DURATION    = 900;
 
+  // Asymmetric hourglass — small living chamber on top, massive crypt below.
+  const WAIST_Y01        = 0.27;
+  const TOP_BULB_MAX     = 0.70;
+  const BOTTOM_BULB_MAX  = 1.00;
+  const WAIST_MIN_WIDTH  = 0.06;
+  const PROFILE_POWER    = 1.6;
+
   const EMOJI_FONT = `'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Symbols', 'Segoe UI Symbol', system-ui`;
+
+  // ===== IDENTITY POOLS (for momentary names on births & deaths + scrolling ticker) =====
+  const NAMES_POOL = [
+    "Aiyana","Mateo","Yusuf","Ling","Priya","Lukas","Amara","Kenji","Sofia","Omar",
+    "Diego","Akira","Fatou","Liam","Mei","Ravi","Chiara","Tariq","Zara","Ade",
+    "Sebastián","Anya","Hiroshi","Layla","Eitan","Naledi","Ji-ho","Marisol","Tomás","Ngozi",
+    "Reza","Idris","Camille","Sven","Aaliyah","Kofi","Bashir","Nikolai","Inara","Petros",
+    "Aiko","Tamás","Ines","Yohannes","Esma","Wei","Olu","Lazar","Imre","Carmen",
+    "Sokrates","Aelius","Yuki","Anh","Demetra","Caius","Brennan","Ottilie","Saoirse","Cyrus"
+  ];
+  // Living birth countries weighted by share of current world births (rough).
+  const COUNTRY_POOL = [
+    ["India", 17.5], ["China", 14.8], ["Nigeria", 5.0], ["Indonesia", 3.4],
+    ["Pakistan", 3.0], ["USA", 4.2], ["Brazil", 2.6], ["Bangladesh", 2.1],
+    ["DR Congo", 1.7], ["Mexico", 1.6], ["Ethiopia", 1.5], ["Philippines", 1.4],
+    ["Egypt", 1.3], ["Vietnam", 1.2], ["Russia", 1.0], ["Iran", 1.0],
+    ["Japan", 0.6], ["Turkey", 1.0], ["Germany", 0.7], ["Thailand", 0.7],
+    ["Kenya", 1.0], ["Tanzania", 1.0], ["Uganda", 0.9], ["South Africa", 0.7],
+    ["Argentina", 0.5], ["Colombia", 0.5], ["France", 0.6], ["UK", 0.6]
+  ];
+  // Era weights track the rough share of all deaths in history that occurred per era.
+  const ERA_POOL = [
+    { era: "Stone Age",     year: "~12,000 BCE", weight: 7  },
+    { era: "Antiquity",     year: "~1500 BCE",   weight: 40 },
+    { era: "Classical",     year: "~200 CE",     weight: 24 },
+    { era: "Medieval",      year: "~1100 CE",    weight: 15 },
+    { era: "Industrial",    year: "~1850 CE",    weight: 8  },
+    { era: "20th Century",  year: "~1950 CE",    weight: 6  }
+  ];
+  function pickFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function weightedPick(arr) {
+    const total = arr.reduce((s, x) => s + (Array.isArray(x) ? x[1] : x.weight), 0);
+    let r = Math.random() * total;
+    for (const x of arr) {
+      const w = Array.isArray(x) ? x[1] : x.weight;
+      r -= w;
+      if (r <= 0) return Array.isArray(x) ? x[0] : x;
+    }
+    const last = arr[arr.length - 1];
+    return Array.isArray(last) ? last[0] : last;
+  }
 
   const $    = id => document.getElementById(id);
   const fmt  = n => Math.round(n).toLocaleString("en-US");
@@ -470,11 +560,15 @@
     bottomGrains: [],
   };
 
+  // Asymmetric: tiny living chamber above the waist, vast crypt below.
   function profileNormalized(y01) {
-    const t = (y01 - 0.5) * 2;
-    const wMin = 0.075;
-    const p = 1.6;
-    return wMin + (1 - wMin) * Math.pow(Math.abs(t), p);
+    if (y01 < WAIST_Y01) {
+      const t = (WAIST_Y01 - y01) / WAIST_Y01;
+      return WAIST_MIN_WIDTH + (TOP_BULB_MAX - WAIST_MIN_WIDTH) * Math.pow(t, PROFILE_POWER);
+    } else {
+      const t = (y01 - WAIST_Y01) / (1 - WAIST_Y01);
+      return WAIST_MIN_WIDTH + (BOTTOM_BULB_MAX - WAIST_MIN_WIDTH) * Math.pow(t, PROFILE_POWER);
+    }
   }
 
   function resizeMacro() {
@@ -490,7 +584,8 @@
 
   function layoutHourglass() {
     const isNarrow = macroW < 720;
-    const padTop = 96, padBottom = 56;
+    const padTop = isNarrow ? 110 : 132;
+    const padBottom = 56;
     const padLeft  = isNarrow ? 16 : 24;
     const padRight = isNarrow ? 16 : 340;
     // hard floors so a freakishly small viewport can't make any of the
@@ -513,9 +608,12 @@
     hg.yTop = padTop + (usableH - h) / 2;
     hg.yBottom = hg.yTop + h;
 
-    const halfBulbArea = 2 * maxHalfW * (h / 2) * 0.43;
-    const targetFill = 0.88;
-    const cellArea = halfBulbArea * targetFill / BOTTOM_GRAINS;
+    // Bottom-bulb area (the big crypt) — that's where 10,900 grains need to fit.
+    // profileIntegral ≈ wMin + (wMax - wMin) / (p + 1) for our profile.
+    const bottomProfileIntegral = WAIST_MIN_WIDTH + (BOTTOM_BULB_MAX - WAIST_MIN_WIDTH) / (PROFILE_POWER + 1);
+    const bottomBulbArea = 2 * maxHalfW * (h * (1 - WAIST_Y01)) * bottomProfileIntegral;
+    const targetFill = 0.86;
+    const cellArea = bottomBulbArea * targetFill / BOTTOM_GRAINS;
     hg.cellSize = Math.max(1.6, Math.sqrt(cellArea));
     hg.grainR   = Math.max(0.7, hg.cellSize * 0.38);
 
@@ -528,8 +626,8 @@
     const cs = Math.max(1, hg.cellSize);
     const wallMargin = 0.015;
     const stepY = Math.max(0.001, cs * 0.92 / Math.max(60, hg.h));
-    let y01 = (which === "top") ? (0.5 - 0.004) : (1.0 - 0.004);
-    const limit = (which === "top") ? 0 : 0.5;
+    let y01 = (which === "top") ? (WAIST_Y01 - 0.004) : (1.0 - 0.004);
+    const limit = (which === "top") ? 0 : WAIST_Y01;
 
     // Hard iteration cap so a broken layout can never spin forever.
     let safety = 20000;
@@ -555,20 +653,20 @@
 
   // featured: rendered with a large prominent number
   const ANNOTATIONS = [
-    { y01: 0.06, side: "left",  kind: "neutral",
+    { y01: 0.04, side: "left",  kind: "neutral",
       title: "Each grain ≈ 10,000,000 people",
       body:  "Falling into the universe of the living." },
-    { y01: 0.42, side: "right", kind: "living", featured: true,
+    { y01: 0.20, side: "right", kind: "living", featured: true,
       title: "You are here",
       bignum: "8.1 BILLION",
       body:  "people alive on Earth today.<br/>810 grains in the upper bulb." },
-    { y01: 0.56, side: "left",  kind: "dead",
+    { y01: 0.30, side: "left",  kind: "dead",
       title: "≈ 1.9 deaths per second",
       body:  "About 60 million people die every year. 6 grains of sand pass through the neck." },
-    { y01: 0.72, side: "right", kind: "dead",
+    { y01: 0.50, side: "right", kind: "dead",
       title: "Half of the dead were children",
       body:  "(in pre-modern times, half of all children died before age 5.)" },
-    { y01: 0.86, side: "right", kind: "dead",
+    { y01: 0.78, side: "right", kind: "dead",
       title: "Socrates lies here · 399 BCE",
       body:  "Roughly half of everyone who ever lived has lived in the last 2,000 years." },
     { y01: 0.965, side: "right", kind: "dead",
@@ -645,9 +743,12 @@
   const topPulses      = [];
   const bottomPulses   = [];
   const chamberFlashes = [];
+  const identityLabels = [];   // momentary names on births/deaths
+  const ticker         = [];   // scrolling roll of the dead inside the bottom bulb
   let lastFertilization = -Infinity;
   let lastBirth         = -Infinity;
   let lastDeath         = -Infinity;
+  let nextTickerAt      = 0;
 
   function step(now) {
     if (now - lastFertilization >= CADENCE_S * 1000) {
@@ -665,10 +766,10 @@
     }
 
     if (now - lastDeath >= 520 + Math.random() * 280) {
-      const jitter = (Math.random() - 0.5) * hg.maxHalfW * 0.06;
+      const jitter = (Math.random() - 0.5) * hg.maxHalfW * 0.05;
       deathParticles.push({
         x: hg.cx + jitter,
-        yStart: hg.yTop + hg.h * 0.502,
+        yStart: hg.yTop + hg.h * (WAIST_Y01 + 0.005),
         yEnd:   hg.yTop + hg.h * 0.985,
         born: now,
         duration: 1100 + Math.random() * 500,
@@ -716,6 +817,15 @@
         if (b.t >= 1) {
           const surfaceTarget = pickTopSurfacePoint();
           topPulses.push({ x: surfaceTarget.x, y: surfaceTarget.y, born: now });
+          // identity label — random name + country, briefly hovering above the landing
+          identityLabels.push({
+            x: surfaceTarget.x,
+            y: surfaceTarget.y - 12,
+            text: `${pickFrom(NAMES_POOL)} · ${weightedPick(COUNTRY_POOL)}`,
+            color: "184,240,220",
+            born: now,
+            duration: 2200,
+          });
           babies.splice(i, 1);
         }
       }
@@ -728,13 +838,42 @@
         const lx = p.x + (Math.random() - 0.5) * 14;
         const ly = hg.yTop + hg.h * (0.975 - Math.random() * 0.04);
         bottomPulses.push({ x: lx, y: ly, born: now });
+        // identity label — random name + era
+        const ePick = weightedPick(ERA_POOL);
+        identityLabels.push({
+          x: lx,
+          y: ly - 10,
+          text: `${pickFrom(NAMES_POOL)} · ${ePick.year}`,
+          color: "232,160,150",
+          born: now,
+          duration: 1800,
+        });
         deathParticles.splice(i, 1);
       }
+    }
+
+    // Tickertape — historical names scrolling sideways through the bottom bulb
+    if (now > nextTickerAt && macroW >= 720) {
+      const e = weightedPick(ERA_POOL);
+      ticker.push({
+        text: `${pickFrom(NAMES_POOL)} · ${e.era} · ${e.year}`,
+        bornAt: now,
+      });
+      nextTickerAt = now + 700 + Math.random() * 500;
+    }
+    const tickSpeed = 32;
+    for (let i = ticker.length - 1; i >= 0; i--) {
+      const t = ticker[i];
+      t.x = macroW + 40 - (now - t.bornAt) / 1000 * tickSpeed;
+      if (t.x < -260) ticker.splice(i, 1);
     }
 
     for (let i = topPulses.length - 1;    i >= 0; i--) if (now - topPulses[i].born    > 1500) topPulses.splice(i, 1);
     for (let i = bottomPulses.length - 1; i >= 0; i--) if (now - bottomPulses[i].born > 1300) bottomPulses.splice(i, 1);
     for (let i = chamberFlashes.length - 1; i >= 0; i--) if (now - chamberFlashes[i].born > 900) chamberFlashes.splice(i, 1);
+    for (let i = identityLabels.length - 1; i >= 0; i--) {
+      if (now - identityLabels[i].born > identityLabels[i].duration) identityLabels.splice(i, 1);
+    }
   }
 
   function pickTopSurfacePoint() {
@@ -776,14 +915,33 @@
     macroCtx.fill();
 
     {
-      const cy = hg.yTop + hg.h * 0.48;
-      const halfW = profileNormalized(0.48) * hg.maxHalfW;
+      const haloY01 = WAIST_Y01 - 0.04;
+      const cy = hg.yTop + hg.h * haloY01;
+      const halfW = profileNormalized(haloY01) * hg.maxHalfW;
       const grad = macroCtx.createRadialGradient(hg.cx, cy, 0, hg.cx, cy, halfW * 1.8);
-      grad.addColorStop(0,   "rgba(140,222,199,0.22)");
+      grad.addColorStop(0,   "rgba(140,222,199,0.26)");
       grad.addColorStop(0.5, "rgba(140,222,199,0.10)");
       grad.addColorStop(1,   "rgba(140,222,199,0)");
       macroCtx.fillStyle = grad;
       macroCtx.fillRect(hg.cx - halfW * 2, cy - halfW * 2, halfW * 4, halfW * 4);
+    }
+
+    // Tickertape — roll of the dead, drawn BEHIND the sand grains
+    if (ticker.length > 0) {
+      macroCtx.save();
+      macroCtx.font = "10px ui-monospace, monospace";
+      macroCtx.textBaseline = "middle";
+      macroCtx.textAlign = "left";
+      const tickerY = hg.yTop + hg.h * 0.62;
+      for (const t of ticker) {
+        let alpha = 0.42;
+        if (t.x < 80) alpha *= Math.max(0, t.x) / 80;
+        if (t.x > macroW - 80) alpha *= Math.max(0, macroW - t.x) / 80;
+        if (alpha < 0.015) continue;
+        macroCtx.fillStyle = `rgba(230, 160, 150, ${alpha.toFixed(3)})`;
+        macroCtx.fillText(t.text, t.x, tickerY);
+      }
+      macroCtx.restore();
     }
 
     const r = hg.grainR;
@@ -921,6 +1079,25 @@
       // skull glyph
       macroCtx.fillStyle = "rgba(255,255,255,1)";
       macroCtx.fillText("☠️", sx, sy);
+      macroCtx.restore();
+    }
+
+    // Identity labels — momentary names floating up from birth/death landings
+    if (identityLabels.length > 0) {
+      macroCtx.save();
+      macroCtx.font = "600 11px ui-monospace, monospace";
+      macroCtx.textAlign = "center";
+      macroCtx.textBaseline = "alphabetic";
+      for (const lab of identityLabels) {
+        const age = (now - lab.born) / lab.duration;
+        if (age >= 1 || age < 0) continue;
+        const fadeIn = Math.min(1, age * 6);
+        const fadeOut = 1 - Math.pow(Math.max(0, age - 0.4) / 0.6, 1.4);
+        const alpha = 0.95 * fadeIn * Math.max(0, fadeOut);
+        const yOffset = age * 22;
+        macroCtx.fillStyle = `rgba(${lab.color}, ${alpha.toFixed(3)})`;
+        macroCtx.fillText(lab.text, lab.x, lab.y - yOffset);
+      }
       macroCtx.restore();
     }
 
