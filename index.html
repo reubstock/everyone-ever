@@ -898,22 +898,25 @@
       macroCtx.restore();
     }
 
-    // Skull and crossbones at the point of death (right of neck) — doubled in size
+    // Skull and crossbones planted on top of the pile of the dead
     {
-      const neckHalfW = profileNormalized(0.5) * hg.maxHalfW;
-      const sx = hg.cx + neckHalfW + 46;
-      const sy = hg.yTop + hg.h * 0.5;
+      // find the topmost grain in the bottom pile
+      let topOfPile = Infinity;
+      for (const g of hg.bottomGrains) if (g.y < topOfPile) topOfPile = g.y;
+      if (!Number.isFinite(topOfPile)) topOfPile = hg.yTop + hg.h * 0.55;
+      const sx = hg.cx;
+      const sy = topOfPile - 22;
       macroCtx.save();
       macroCtx.font = `44px ${EMOJI_FONT}`;
       macroCtx.textAlign = "center";
       macroCtx.textBaseline = "middle";
-      // wider red halo to match the bigger glyph
-      const haloGrad = macroCtx.createRadialGradient(sx, sy, 0, sx, sy, 40);
-      haloGrad.addColorStop(0, "rgba(214, 100, 100, 0.34)");
+      // soft red halo against the crimson pile below
+      const haloGrad = macroCtx.createRadialGradient(sx, sy, 0, sx, sy, 44);
+      haloGrad.addColorStop(0, "rgba(214, 100, 100, 0.38)");
       haloGrad.addColorStop(1, "rgba(214, 100, 100, 0)");
       macroCtx.fillStyle = haloGrad;
       macroCtx.beginPath();
-      macroCtx.arc(sx, sy, 40, 0, TAU);
+      macroCtx.arc(sx, sy, 44, 0, TAU);
       macroCtx.fill();
       // skull glyph
       macroCtx.fillStyle = "rgba(255,255,255,1)";
