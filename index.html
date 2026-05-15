@@ -787,6 +787,9 @@
         if (now >= b.dropAt) {
           b.phase = "drop";
           b.born = now;
+          // Assign identity at the exact moment of birth — travels with the baby.
+          b.name    = pickFrom(NAMES_POOL);
+          b.country = weightedPick(COUNTRY_POOL);
           lastBirth = now;
           chamberFlashes.push({ born: now });
         }
@@ -817,15 +820,6 @@
         if (b.t >= 1) {
           const surfaceTarget = pickTopSurfacePoint();
           topPulses.push({ x: surfaceTarget.x, y: surfaceTarget.y, born: now });
-          // identity label — random name + country, briefly hovering above the landing
-          identityLabels.push({
-            x: surfaceTarget.x,
-            y: surfaceTarget.y - 12,
-            text: `${pickFrom(NAMES_POOL)} · ${weightedPick(COUNTRY_POOL)}`,
-            color: "184,240,220",
-            born: now,
-            duration: 2200,
-          });
           babies.splice(i, 1);
         }
       }
@@ -1306,7 +1300,8 @@
     mCtx.lineTo(cx + 28, chamberY + chR + 12);
     mCtx.stroke();
 
-    // babies on machine
+    // babies on machine — plus big bright birth-name label that stays with each
+    // baby from the moment of birth all the way to the launch off the conveyor.
     for (const b of babies) {
       if (b.phase === "drop") {
         // start at the visible bottom point of the chamber (not inside the glow)
@@ -1314,12 +1309,18 @@
         const yEnd   = beltY - 6;
         const y = lerp(yStart, yEnd, b.t * b.t);
         drawBaby(mCtx, cx, y, 1);
+        // Name fades in as the baby clears the chamber.
+        const labelAlpha = Math.max(0, Math.min(1, b.t * 2.5 - 0.25));
+        drawBirthLabel(mCtx, b, cx, y - 28, labelAlpha);
       } else if (b.phase === "belt") {
         const xStart = cx;
         const xEnd   = mW + 22;
         const eased = b.t < 0.7 ? (b.t / 0.7) * 0.7 : 0.7 + (1 - Math.pow(1 - (b.t - 0.7) / 0.3, 2)) * 0.3;
         const x = lerp(xStart, xEnd, eased);
         drawBaby(mCtx, x, beltY - 6, 1 - b.t * 0.15);
+        // Name fades out in the last 15% of belt travel — about to be launched.
+        const labelAlpha = b.t < 0.85 ? 1 : Math.max(0, 1 - (b.t - 0.85) / 0.15);
+        drawBirthLabel(mCtx, b, x, beltY - 32, labelAlpha);
       }
     }
 
@@ -1360,6 +1361,38 @@
   }
 
   // ===== SHAPES =====
+  // Big bright "BORN: name · country" label that travels with the baby
+  // through the drop + belt phases.
+  function drawBirthLabel(ctx, b, x, y, alpha) {
+    if (alpha <= 0 || !b.name) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+
+    // "BORN" eyebrow (very small, tracked)
+    ctx.font = "600 8px ui-monospace, monospace";
+    ctx.fillStyle = "rgba(184, 240, 220, 0.78)";
+    ctx.fillText("· B O R N ·", x, y - 18);
+
+    // Big bright name with teal glow
+    ctx.shadowColor = "rgba(140, 222, 199, 0.95)";
+    ctx.shadowBlur = 18;
+    ctx.font = "700 19px ui-monospace, monospace";
+    ctx.fillStyle = "rgba(230, 255, 245, 1)";
+    ctx.fillText(b.name, x, y);
+    // crisp second pass (no shadow) so the letters stay sharp on top of the halo
+    ctx.shadowBlur = 0;
+    ctx.fillText(b.name, x, y);
+
+    // Country (smaller, dimmer, tracked uppercase)
+    ctx.font = "600 9px ui-monospace, monospace";
+    ctx.fillStyle = "rgba(184, 240, 220, 0.78)";
+    ctx.fillText(String(b.country || "").toUpperCase(), x, y + 13);
+
+    ctx.restore();
+  }
+
   function drawBaby(ctx, x, y, alpha) {
     ctx.save();
     ctx.globalAlpha = alpha;
