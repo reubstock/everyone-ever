@@ -959,10 +959,10 @@
       const cy = hg.yTop + hg.h * haloY01;
       const halfW = profileNormalized(haloY01) * hg.maxHalfW;
       const grad = macroCtx.createRadialGradient(hg.cx, cy, 0, hg.cx, cy, halfW * 2.4);
-      grad.addColorStop(0,   "rgba(170, 250, 220, 0.45)");
-      grad.addColorStop(0.3, "rgba(244, 199, 90, 0.18)");   // warm gold ring
-      grad.addColorStop(0.7, "rgba(140, 222, 199, 0.10)");
-      grad.addColorStop(1,   "rgba(140, 222, 199, 0)");
+      grad.addColorStop(0,   "rgba(120, 255, 190, 0.65)");
+      grad.addColorStop(0.3, "rgba(255, 215, 110, 0.28)");  // warm gold ring
+      grad.addColorStop(0.7, "rgba(80, 240, 165, 0.15)");
+      grad.addColorStop(1,   "rgba(80, 240, 165, 0)");
       macroCtx.fillStyle = grad;
       macroCtx.fillRect(hg.cx - halfW * 3, cy - halfW * 3, halfW * 6, halfW * 6);
     }
@@ -971,12 +971,12 @@
     {
       const fy = hg.yTop + hg.h * 0.94;
       const fhw = hg.maxHalfW * 0.95;
-      const fg = macroCtx.createRadialGradient(hg.cx, fy, 0, hg.cx, fy, fhw * 1.4);
-      fg.addColorStop(0, "rgba(255, 140, 90, 0.18)");
-      fg.addColorStop(0.5, "rgba(214, 100, 100, 0.08)");
-      fg.addColorStop(1, "rgba(214, 100, 100, 0)");
+      const fg = macroCtx.createRadialGradient(hg.cx, fy, 0, hg.cx, fy, fhw * 1.5);
+      fg.addColorStop(0,   "rgba(255, 130, 70, 0.32)");
+      fg.addColorStop(0.4, "rgba(255, 80, 90, 0.18)");
+      fg.addColorStop(1,   "rgba(255, 80, 90, 0)");
       macroCtx.fillStyle = fg;
-      macroCtx.fillRect(hg.cx - fhw * 1.6, fy - fhw * 1.6, fhw * 3.2, fhw * 3.2);
+      macroCtx.fillRect(hg.cx - fhw * 1.8, fy - fhw * 1.8, fhw * 3.6, fhw * 3.6);
     }
 
     // Tickertape — roll of the dead, drawn BEHIND the sand grains
@@ -1000,24 +1000,25 @@
     const r = hg.grainR;
     for (let i = 0; i < hg.topGrains.length; i++) {
       const g = hg.topGrains[i];
-      const t = 0.85 + 0.18 * Math.sin(now / 700 + i * 0.7);
-      // brighter living teal with a hint of gold sparkle on some grains
-      const goldKissed = (i % 17) === 0;
+      // very small alpha variance so grains stay luminous rather than ghosting out
+      const t = 0.95 + 0.05 * Math.sin(now / 700 + i * 0.7);
+      // vivid emerald-mint base; 1-in-13 grain is a brilliant gold sparkle
+      const goldKissed = (i % 13) === 0;
       macroCtx.fillStyle = goldKissed
-        ? `rgba(255, 220, 140, ${(t * 0.95).toFixed(3)})`
-        : `rgba(170, 250, 220, ${t.toFixed(3)})`;
+        ? `rgba(255, 215, 110, ${t.toFixed(3)})`
+        : `rgba(80, 240, 165, ${t.toFixed(3)})`;
       macroCtx.beginPath();
       macroCtx.arc(g.x, g.y, r, 0, TAU);
       macroCtx.fill();
     }
     for (let i = 0; i < hg.bottomGrains.length; i++) {
       const g = hg.bottomGrains[i];
-      const t = 0.78 + 0.20 * Math.sin(now / 900 + i * 0.31);
-      // warmer salmon-crimson with occasional amber embers — burnished gold of past lives
-      const ember = (i % 31) === 0;
+      const t = 0.92 + 0.08 * Math.sin(now / 900 + i * 0.31);
+      // vivid crimson-coral base; 1-in-23 grain is a bright amber ember
+      const ember = (i % 23) === 0;
       macroCtx.fillStyle = ember
-        ? `rgba(255, 160, 90, ${(t * 0.95).toFixed(3)})`
-        : `rgba(239, 125, 125, ${t.toFixed(3)})`;
+        ? `rgba(255, 145, 70, ${t.toFixed(3)})`
+        : `rgba(255, 80, 90, ${t.toFixed(3)})`;
       macroCtx.beginPath();
       macroCtx.arc(g.x, g.y, r, 0, TAU);
       macroCtx.fill();
