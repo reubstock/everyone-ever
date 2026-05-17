@@ -6,25 +6,29 @@
 <title>Everyone Ever</title>
 <style>
   :root {
-    --bg: #060708;
-    --ink: #f1f3f7;
-    --ink-dim: rgba(241,243,247,0.78);
-    --ink-faint: rgba(241,243,247,0.5);
-    --hairline: rgba(255,255,255,0.08);
-    --accent: #ff9a5a;
-    --living: #8cdec7;
-    --living-bright: #b8f0dc;
-    --living-soft: rgba(140,222,199,0.5);
-    --dead: #d66464;
-    --dead-soft: rgba(214,100,100,0.5);
+    --bg: #0a0c18;
+    --ink: #f5f7fb;
+    --ink-dim: rgba(245,247,251,0.85);
+    --ink-faint: rgba(245,247,251,0.55);
+    --hairline: rgba(190,200,230,0.12);
+    --accent: #ffb070;
+    --gold: #f4c75a;
+    --living: #5fe8c0;
+    --living-bright: #b8fae0;
+    --living-soft: rgba(95,232,192,0.55);
+    --dead: #ef7d7d;
+    --dead-bright: #ffa090;
+    --dead-soft: rgba(239,125,125,0.55);
     --heart: #ff4a6b;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     height: 100%;
     background:
-      radial-gradient(ellipse 80% 60% at 75% 35%, #0c0f17 0%, #060708 60%),
-      #060708;
+      radial-gradient(ellipse 60% 45% at 65% 18%, rgba(244, 199, 90, 0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 55% at 30% 70%, rgba(95, 232, 192, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 80% at 70% 85%, rgba(239, 125, 125, 0.08) 0%, transparent 60%),
+      linear-gradient(180deg, #131634 0%, #0a0c1c 55%, #07091a 100%);
     color: var(--ink);
     font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
     overflow: hidden;
@@ -108,9 +112,19 @@
     color: var(--ink);
     line-height: 1;
   }
-  .counter .num.primary { font-size: 30px; font-weight: 500; }
-  .counter .num.living  { color: var(--living-bright); }
-  .counter .num.dead    { color: var(--dead); }
+  .counter .num.primary {
+    font-size: 30px;
+    font-weight: 500;
+    text-shadow: 0 0 20px rgba(184, 250, 224, 0.55);
+  }
+  .counter .num.living  {
+    color: var(--living-bright);
+    text-shadow: 0 0 14px rgba(184, 250, 224, 0.4);
+  }
+  .counter .num.dead    {
+    color: var(--dead-bright);
+    text-shadow: 0 0 14px rgba(255, 160, 144, 0.4);
+  }
   .counter .label {
     font-size: 10.5px;
     text-transform: uppercase;
@@ -129,7 +143,9 @@
   .machine-panel, .macro-panel { position: relative; min-width: 0; min-height: 0; }
   .machine-panel {
     border-right: 1px solid var(--hairline);
-    background: linear-gradient(to right, #07090d, #050608);
+    background:
+      radial-gradient(ellipse 70% 40% at 50% 25%, rgba(244, 199, 90, 0.07) 0%, transparent 70%),
+      linear-gradient(180deg, #15182e 0%, #0c0f1f 60%, #080a14 100%);
     overflow: hidden;
   }
   .macro-panel { overflow: hidden; }
@@ -153,8 +169,9 @@
     letter-spacing: 6px;
     color: #ffffff;
     text-shadow:
-      0 0 18px rgba(255, 74, 107, 0.32),
-      0 0 36px rgba(140, 222, 199, 0.22);
+      0 0 22px rgba(255, 74, 107, 0.45),
+      0 0 42px rgba(244, 199, 90, 0.28),
+      0 0 64px rgba(95, 232, 192, 0.20);
     font-family: ui-monospace, "SF Mono", monospace;
   }
   .machine-title .title-heart {
@@ -200,13 +217,15 @@
     text-align: right;
   }
   .chamber-readout .readout-num {
-    font-size: 34px;
+    font-size: 36px;
     font-weight: 600;
     color: var(--living-bright);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.5px;
     line-height: 1;
-    text-shadow: 0 0 18px rgba(140, 222, 199, 0.45);
+    text-shadow:
+      0 0 24px rgba(184, 250, 224, 0.65),
+      0 0 48px rgba(95, 232, 192, 0.32);
   }
   .chamber-readout .readout-label {
     font-size: 10px;
@@ -328,18 +347,18 @@
   .macro-headline .hl-num {
     font-size: 42px;
     font-weight: 700;
-    color: var(--dead);
+    color: var(--dead-bright);
     letter-spacing: 1px;
     text-shadow:
-      0 0 22px rgba(214, 100, 100, 0.55),
-      0 0 44px rgba(214, 100, 100, 0.28);
+      0 0 26px rgba(255, 140, 110, 0.7),
+      0 0 56px rgba(255, 80, 70, 0.32);
     margin-right: 4px;
   }
   .macro-headline .hl-dead {
-    color: var(--dead);
+    color: var(--dead-bright);
     font-weight: 600;
     font-size: 26px;
-    text-shadow: 0 0 18px rgba(214, 100, 100, 0.4);
+    text-shadow: 0 0 22px rgba(255, 140, 110, 0.55);
   }
 
   /* Hourglass annotations */
@@ -939,12 +958,25 @@
       const haloY01 = WAIST_Y01 - 0.04;
       const cy = hg.yTop + hg.h * haloY01;
       const halfW = profileNormalized(haloY01) * hg.maxHalfW;
-      const grad = macroCtx.createRadialGradient(hg.cx, cy, 0, hg.cx, cy, halfW * 1.8);
-      grad.addColorStop(0,   "rgba(140,222,199,0.26)");
-      grad.addColorStop(0.5, "rgba(140,222,199,0.10)");
-      grad.addColorStop(1,   "rgba(140,222,199,0)");
+      const grad = macroCtx.createRadialGradient(hg.cx, cy, 0, hg.cx, cy, halfW * 2.4);
+      grad.addColorStop(0,   "rgba(170, 250, 220, 0.45)");
+      grad.addColorStop(0.3, "rgba(244, 199, 90, 0.18)");   // warm gold ring
+      grad.addColorStop(0.7, "rgba(140, 222, 199, 0.10)");
+      grad.addColorStop(1,   "rgba(140, 222, 199, 0)");
       macroCtx.fillStyle = grad;
-      macroCtx.fillRect(hg.cx - halfW * 2, cy - halfW * 2, halfW * 4, halfW * 4);
+      macroCtx.fillRect(hg.cx - halfW * 3, cy - halfW * 3, halfW * 6, halfW * 6);
+    }
+
+    // Ambient warmth glow at the base of the bottom bulb — like coals
+    {
+      const fy = hg.yTop + hg.h * 0.94;
+      const fhw = hg.maxHalfW * 0.95;
+      const fg = macroCtx.createRadialGradient(hg.cx, fy, 0, hg.cx, fy, fhw * 1.4);
+      fg.addColorStop(0, "rgba(255, 140, 90, 0.18)");
+      fg.addColorStop(0.5, "rgba(214, 100, 100, 0.08)");
+      fg.addColorStop(1, "rgba(214, 100, 100, 0)");
+      macroCtx.fillStyle = fg;
+      macroCtx.fillRect(hg.cx - fhw * 1.6, fy - fhw * 1.6, fhw * 3.2, fhw * 3.2);
     }
 
     // Tickertape — roll of the dead, drawn BEHIND the sand grains
@@ -968,16 +1000,24 @@
     const r = hg.grainR;
     for (let i = 0; i < hg.topGrains.length; i++) {
       const g = hg.topGrains[i];
-      const t = 0.78 + 0.22 * Math.sin(now / 700 + i * 0.7);
-      macroCtx.fillStyle = `rgba(140,222,199,${t.toFixed(3)})`;
+      const t = 0.85 + 0.18 * Math.sin(now / 700 + i * 0.7);
+      // brighter living teal with a hint of gold sparkle on some grains
+      const goldKissed = (i % 17) === 0;
+      macroCtx.fillStyle = goldKissed
+        ? `rgba(255, 220, 140, ${(t * 0.95).toFixed(3)})`
+        : `rgba(170, 250, 220, ${t.toFixed(3)})`;
       macroCtx.beginPath();
       macroCtx.arc(g.x, g.y, r, 0, TAU);
       macroCtx.fill();
     }
     for (let i = 0; i < hg.bottomGrains.length; i++) {
       const g = hg.bottomGrains[i];
-      const t = 0.72 + 0.18 * Math.sin(now / 900 + i * 0.31);
-      macroCtx.fillStyle = `rgba(214,100,100,${t.toFixed(3)})`;
+      const t = 0.78 + 0.20 * Math.sin(now / 900 + i * 0.31);
+      // warmer salmon-crimson with occasional amber embers — burnished gold of past lives
+      const ember = (i % 31) === 0;
+      macroCtx.fillStyle = ember
+        ? `rgba(255, 160, 90, ${(t * 0.95).toFixed(3)})`
+        : `rgba(239, 125, 125, ${t.toFixed(3)})`;
       macroCtx.beginPath();
       macroCtx.arc(g.x, g.y, r, 0, TAU);
       macroCtx.fill();
@@ -1056,17 +1096,22 @@
       macroCtx.font = "700 22px ui-monospace, monospace";
       macroCtx.textAlign = "center";
       macroCtx.textBaseline = "middle";
-      // outer soft glow pass
-      macroCtx.shadowColor = "rgba(140, 222, 199, 0.85)";
-      macroCtx.shadowBlur = 22;
-      macroCtx.fillStyle = "rgba(230, 255, 245, 1)";
+      // outer soft glow pass — warmer, brighter
+      macroCtx.shadowColor = "rgba(170, 255, 220, 0.95)";
+      macroCtx.shadowBlur = 30;
+      macroCtx.fillStyle = "rgba(238, 255, 248, 1)";
       macroCtx.fillText("L I V I N G", lx, ly);
-      // second pass without shadow for crisp letters on top
+      // second pass: warm gold inner shimmer
+      macroCtx.shadowColor = "rgba(244, 199, 90, 0.45)";
+      macroCtx.shadowBlur = 12;
+      macroCtx.fillStyle = "rgba(255, 250, 230, 1)";
+      macroCtx.fillText("L I V I N G", lx, ly);
+      // third pass without shadow for crisp letters
       macroCtx.shadowBlur = 0;
-      macroCtx.fillStyle = "rgba(240, 255, 250, 1)";
+      macroCtx.fillStyle = "rgba(248, 255, 250, 1)";
       macroCtx.fillText("L I V I N G", lx, ly);
       // bracket marks pointing to the bulb opening
-      macroCtx.strokeStyle = "rgba(184, 240, 220, 0.6)";
+      macroCtx.strokeStyle = "rgba(184, 240, 220, 0.75)";
       macroCtx.lineWidth = 1.2;
       macroCtx.beginPath();
       macroCtx.moveTo(hg.cx - hg.maxHalfW * 0.55, hg.yTop - 14);
